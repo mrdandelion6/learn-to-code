@@ -846,7 +846,6 @@ PHP is a server-side scripting language. it is used to create dynamic web pages.
 
 we will now show some examples of how PHP code can be vulnerable to SQL injections.
 
-
 the above code is vulnerable to **PHP injections**. this is when an attacker sends malicious input to a PHP script. this input is then executed as code on the server. this can allow an attacker to read, write, or delete data from the database.
 
 for example, consider the following code:
