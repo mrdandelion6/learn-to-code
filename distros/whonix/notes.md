@@ -16,8 +16,6 @@ this is where you do your actual work. it has no direct internet connection and 
 this means that even if the malware infects your workstation , it cannot bypass Tor or reveal your real IP address , because the workstation cannot physically connect to the internet any other way.
 
 ## why use whonix
-whonix provides several important security advantages. it offers automatic Tor routing for all applications without configuration, strong isolation that prevents IP from leaking even if workstation is compromised, , and protection against many forms of malware and tracking.
+whonix provides several important security advantages. it offers automatic Tor routing for all applications without configuration, strong isolation that prevents IP from leaking even if workstation is compromised, and protection against many forms of malware and tracking.
 
-
-
-
+the system is also designed to be **amnesic**--you can reset it to clean states easily. the dual-VM architecture also means you can run multiple workstations with different security profiles , all routing to the same Gateway.
