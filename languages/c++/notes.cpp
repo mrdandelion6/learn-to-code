@@ -2524,6 +2524,28 @@ int polymorphism() {
 }
 
 int virtual_functions() {
+    // virtual functions are C++'s mechanism for achieving runtime polymorphism.
+    // for instance , consider the following case:
+
+    class Animal {
+    public:
+        void speak() { std::cout << "animal speaks" << std::endl; }
+    };
+
+    class Cat {
+    public:
+        void speak() { std::cout << "cat speaks" << std::endl; }
+    };
+
+    Animal cat = cat();
+    car.speak(); // will print "animal speaks"
+
+    // since the type of the object is declared as Animal , it uses animal's speak()
+    // method , even though we called the cat() constructor. this is because we used
+    // Animal for the type. so at compile time , Animal::speak() is called.
+
+    // to get around this , C++ deploys a dynamic member function calling system , using
+    // virtual tables. 
 
     return 0;
 }
