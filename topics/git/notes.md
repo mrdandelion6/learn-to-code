@@ -103,7 +103,7 @@ git checkout -b feature/user-authentication
 - usually branched from and merged back into main branch
 - naming convention usually follows: `feature/feature-name`
 
-#### relrease branches
+#### release branches
 ```bash
 git checkout -b release/1.0.0
 ```
@@ -134,8 +134,7 @@ like so
 ```bash
 # create fix branch from release branch
 git checkout -b hotfix/feature-A-crash release/2.0
-
-# fix bug abd test fix
+# fix bug and test fix
 
 # merge fix into release
 git checkout release/2.0
@@ -208,7 +207,7 @@ git merge release/1.1.0
 the above workflow is known as **gitflow**. your workflow will most definitely vary depending on your team. for instance, you might not want to merge the release branch into dev if some configuration files are different for production vs. development. it really depends.
 
 ### advanced branch concepts
-#### remote trackinng branches
+#### remote tracking branches
 - branches that track changes in remote repositories
 - named like `origin/main` or `origin/feature-branch`
 ```bash
@@ -228,8 +227,7 @@ git branch -u origin/feature-branch # set up tracking
 - recall our example with dev branch, that was a git flow practice
 
 ## git merging
-
-a merge combines changes from different **branches**. this allows us to cimbine work from different branches. the significance of being able to work on different branches is all explained above. once we want to join branches together, we do a merge.
+a merge combines changes from different **branches**. this allows us to combine work from different branches. the significance of being able to work on different branches is all explained above. once we want to join branches together, we do a merge.
 
 there are 4 types of merging:
 1. fast-forward merge
@@ -260,7 +258,6 @@ or you could simply do:
 ```bash
 git pull
 ```
-
 in the following sections you will see some simple merge examples and see how merging exactly works.
 
 ### basic merge example
@@ -317,10 +314,10 @@ note that `feature`'s history was not wiped or anything, we simply restructured 
 ### recursive three-way merge
 - the default merge strategy for when there is a branch divergence
 - creates a new merge commit
-- combimes changes frm both branches
+- combimes changes from both branches
 - preserves commit history
 - shows explicit branch structure
-- branch divergences happen often when multiple devs work on different features in parallel
+- branch divergences happens often when multiple devs work on different features in parallel
 
 for example, consider the following commit graph:
 ```
@@ -341,12 +338,12 @@ feature      D --- E /
 ```
 a new commit F gets created that combines E and C. this commit uses the three points mentioned before. we need the common ancestor to determine what the differences were. it serves as a reference to when the divergent branches were the same.
 
-#### resolving merge
+#### resolving three-way merge
 we will demonstrate how exactly F gets created. here is the algorithm:
 1. identify the base (this is B)
 2. for each line/chunk of code compare all three versions
-  - if base -> A changed but base -> B didn't, use A's line/chunk
-  - if base -> B changed but base -> A didn't, use B's line/chunk
+  - if base->A changed but base->B didn't, use A's line/chunk
+  - if base->B changed but base->A didn't, use B's line/chunk
   - if both changed the same way, use either
   - if both changed different **flag as a conflict**
 3. for conflicts, the system will
@@ -375,5 +372,174 @@ print("i resolved the conflict!")
 ```
 until you resolve the conflicts, you won't be able to push or pull any changes from remote.
 
-## git lfs
+### rebase and merge
+rebase replays your commits on top of another branch. e.g) suppose you are on the target branch main , and want to merge your source branch feature. first you need to checkout to the source branch , then after rebase you get:
+```
+before rebase:
+    A---B---C  (main)
+        |
+        D---E  (feature)
 
+after rebase:
+    A---B---C  (main)
+            |
+            D'---E'  (feature)
+```
+the commands would look like:
+```bash
+# go on feature
+git checkout feature
+
+# rebase feature onto main
+git rebase main
+```
+what this does is CHANGE the feature branch's commit history to be compatible with the main branch's new head. it DOES NOT change the main branch at all. then we can checkout to main and do a fast-forward merge:
+```bash
+# after git rebase and merge conflicts resolved
+git checkout main
+git merge feature # does fast forward merge
+```
+then whe have:
+```
+A---B---C---D'---E'
+```
+
+#### resolving rebase merge
+1. identify the base / common ancestor (this is B). curr = base.
+2. take each commit feature (D, E)
+3. for each commit:
+- apply the commit's changes on top of curr branch
+- if conflicts occur:
+  - git pauses the rebase
+  - shows conflict markers in affected files (as we showed above)
+  - you must resolve the merges manually (as we showed above)
+  - stage fixed files
+  - continue with `git rebase --continue`
+- create a new commit with resolved changes. curr = new commit
+4. repeat step 3 with the next feature commit until none are left.
+
+so in our example of D and E, we would have
+1. base is B
+2. feature commits are D, E
+3. for D, E:
+  a. starting with D:
+  - apply D's changes on top of B
+  - fix stuff and continue merge
+  - create new commit D'
+  b. now we do of E
+  - apply E's changes on top of D'
+  - fix stuff and continue merge
+  - create new commit E'
+
+note that the original D and E commits still exist , they just aren't referenced within the feature branch's history anymore. this is how the full example would look like in terminal:
+```bash
+# on feature branch
+$ git checkout feature
+
+# start with pulling
+$ git pull --rebase origin main
+
+# or alternatively , fetch then call rebase
+git fetch origin
+$ git rebase origin/man
+
+# git starts rebasing , suppose commit D conflicts:
+"Applying: Add shopping cart functionality
+error: Failed to merge in the changes.
+hint: Use 'git am --show-current-patch' to see the failed patch
+Resolve all conflicts manually, mark them as resolved with
+"git add/rm <conflicted_files>", then run "git rebase --continue".
+You can instead skip this patch with "git rebase --skip".
+To abort and get back to the state before "git rebase", run "git rebase --abort"."
+
+# check whart's conflicted:
+$ git status
+"interactive rebase in progress; onto 1a2b3c4
+Last command done (1 command done):
+   pick 5d6e7f8 Add shopping cart functionality
+Next command to do (1 remaining command):
+   pick 9a0b1c2 Update cart validation
+  (use "git rebase --edit-todo" to view and edit)
+You are currently rebasing branch 'feature' on '1a2b3c4'.
+  (fix conflicts and then run "git rebase --continue")
+  (use "git rebase --skip" to skip this patch)
+  (use "git rebase --abort" to check out the original branch)
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+  both modified:   file.txt"
+
+# fix the conflict , recall steps we showed in 3 way merge
+vi file.txt
+git add file.txt
+
+# continue rebase
+git rebase --continue
+
+# take care of any conflicts for commit E similarly.. then rebase finishes:
+"Succcessfully rebased and updated refs/heads/feature."
+
+# now feature branch is rebased , we will ff merge into main:
+git checkout main
+git merge feature # uses ff because there should be no divergence
+
+# you could have also down this and it would be the same:
+git merge --ff-only feature
+```
+
+now let's look at the case when we are on the main branch locally and we have conflicts with the remote main branch.
+```
+remote (origin/main):
+    A---B---C---X  (origin/main)
+
+local (main):
+    A---B---C---Y  (main)
+```
+we checkout to main branch , then rebase it:
+```
+A---B---C---X---Y'  (main)
+```
+then instead of doing a fast forward merge into another branch , just push.
+
+```bash
+# on the main branch , we pull:
+git pull --rebase
+
+# or equivalently:
+git fetch origin
+git rebease origin/main
+
+# git starts rebasing , suppose remote branch commit conflicts:
+"Applying: Your local commit message
+error: Failed to merge in the changes.
+Resolve all conflicts manually, mark them as resolved with
+"git add/rm <conflicted_files>", then run "git rebase --continue"."
+
+# similarly , resolve conflicts:
+git status
+"interactive rebase in progress; onto 9x8y7z6
+Last command done (1 command done):
+   pick 1a2b3c4 Your local commit message
+  (no more commands)
+You are currently rebasing branch 'main' on '9x8y7z6'.
+  (fix conflicts and then run "git rebase --continue")
+
+Unmerged paths:
+  both modified:   file.txt"
+
+# fix
+vi file.txt
+git add file.txt
+
+# continue fixing:
+git rebarse --continue
+"Successfully rebased and updated refs/heads/main."
+
+# now just push:
+git push origin main
+```
+
+
+### squash merge
+
+## git lfs
