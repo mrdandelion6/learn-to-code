@@ -30,7 +30,6 @@ git is a version control system. it allows you to track changes to files over ti
 imagine you want to write a book with a friend. you could email each other the book back and forth, but that would be a mess. instead, you could use git to keep track of the changes you make to the book. you could each work on your own copy of the book, and then use git to merge your changes together.
 
 ## git vs github
-
 git is a version control system. github is a website that hosts git repositories.
 
 ## stages of git tracked files
@@ -64,7 +63,6 @@ think of your codebase as a tree. the main trunk (usually called `main` or `mast
 before we explore some important branch concepts, we will first motivate why we use branches.
 
 ### why use branches ?
-
 #### parallel development
 - multiple devs can work on *different features* simultaneously without interfering with each other (don't have to serialize pushes and pulls with team)
 
@@ -538,7 +536,6 @@ git rebarse --continue
 # now just push:
 git push origin main
 ```
-
 
 ### squash merge
 
