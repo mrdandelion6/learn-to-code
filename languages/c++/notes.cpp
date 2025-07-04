@@ -856,7 +856,8 @@ int vectors() {
         // 1. creates a temporary string with "hello"
         // 2. moves/copies that string into the vector
 
-    // whereas emplace_back() constructs it directly into the vector's memory, so one step
+    // whereas emplace_back() constructs it directly into the vector's memory, so one step.
+    // no temporary string "hello".
 
     // for integers, it's still one step for emplace_back():
     vec.push_back(69);
