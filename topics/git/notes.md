@@ -530,7 +530,7 @@ vi file.txt
 git add file.txt
 
 # continue fixing:
-git rebarse --continue
+git rebase --continue
 "Successfully rebased and updated refs/heads/main."
 
 # now just push:
