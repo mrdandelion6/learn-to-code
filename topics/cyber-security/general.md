@@ -1095,3 +1095,16 @@ cd /mnt/encrypted_stuff
 umount /mnt/encrypted_stuff
 cryptsetup luksClose encrypted_volume
 ```
+
+#### flexibity of LUKS encrypted containers
+remember , the encrypted container we made is just a file. that means it is portable and can be moved around .. anywhere. you can move the container to a windows NTFS partition , to an ext4 USB stick , to even a trash macbook , and that is fine. all you need to decrypt the container is just `cryptsetup` and the passphrase.
+
+#### LUKS header
+the flexibilty of LUKS containres means you can easily make backups of the container as you wish. it is also recommended to backup the LUKS header separately. the LUKS header is part of the container , but if it ever gets corrupted , you won't be able to access the container , even with the pass phrase. to back up the header , you can do as follows:
+```bash
+# backup header
+cryptsetup luksHeaderBackup /path/to/encrypted_container.img --header-backup-file /path/to/header.backup
+
+# if header gets corrupted , you can restore it like so:
+cryptsetup luksHeaderRestore /path/to/encrypted_container.img --header-backup-file /path/to/header.backup
+```
