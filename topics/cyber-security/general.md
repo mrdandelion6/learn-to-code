@@ -1065,10 +1065,10 @@ cryptsetup luksOpen /path/to/encrypted_container.img encrypted_volume
 # the above creates a block device at /dev/mapper/encrypted_volume
 
 # format the block device
-mkfs.ext4 /dev/mapper/encrypted_volume
+sudo mkfs.ext4 /dev/mapper/encrypted_volume
 
 # mount
-mount /dev/mapper/encrypted_volume /mnt/encrypted_stuff
+sudo mount /dev/mapper/encrypted_volume /mnt/encrypted_stuff
 
 # do whatever stuff , add data , etc.
 cd /mnt/encrypted_stuff
@@ -1076,7 +1076,7 @@ cd /mnt/encrypted_stuff
 
 # now unmount and close block device
 umount /mnt/encrypted_stuff
-cryptsetup luksClose encrypted_volume
+sudo cryptsetup luksClose encrypted_volume
 ```
 
 on subsequent accesses you would just do:
