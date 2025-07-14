@@ -1092,8 +1092,8 @@ cd /mnt/encrypted_stuff
 # ...
 
 # umount and close
-umount /mnt/encrypted_stuff
-cryptsetup luksClose encrypted_volume
+sudo umount /mnt/encrypted_stuff
+sudo cryptsetup luksClose encrypted_volume
 ```
 
 #### flexibity of LUKS encrypted containers
