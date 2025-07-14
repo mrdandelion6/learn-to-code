@@ -170,7 +170,7 @@ you don't need to memorize these terms, but you should be familiar with them and
 - get other people to check your work
 
 #### don't volunteer information
-- attacks commonly work in the dark and perform reconnaissance to uncover information about a target. don't make it easy for them. 
+- attacks commonly work in the dark and perform reconnaissance to uncover information about a target. don't make it easy for them.
 - don't show context, don't show your hand
 
 #### fail safely
@@ -310,7 +310,7 @@ we will learn how to effectively use gdb to debug a C program. this will help us
 consider the following C program:
 
 ```c
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
     int x = 5;
     int y = 6;
     int z = x + y;
@@ -347,7 +347,7 @@ instead of typing `break`, we can also just type `b`. we could also break at a s
 and to run, we could have used `r` instead. similarly, we can also step through code using the `step` command or `s` for short:
 ```bash
 (gdb) step
-``` 
+```
 
 moving on, we can also disassemble the main function with the following command:
 
@@ -355,7 +355,7 @@ moving on, we can also disassemble the main function with the following command:
 (gdb) disassemble main
 ```
 
-this will show us the assembly code for the main function. 
+this will show us the assembly code for the main function.
 
 we can also see all the information about the registers with the following command:
 
@@ -428,22 +428,22 @@ in this section we learn about the different file system permissions in linux. w
     - to list files
 - mkdir
     - to make a directory
-- stat 
+- stat
     - to see the status of a file
-- touch 
+- touch
     - to create a file or update the timestamp of a file
 
 some more commands you will want to know are:
-- cat 
+- cat
     - to concatenate files (print the contents of a file)
-- grep 
+- grep
     - to search for a pattern in a file. uses regular expressions.
-- less 
+- less
     - to view a file one page at a time
-- wc 
+- wc
     - to count the number of lines, words, and characters in a file
-  
-- sudo 
+
+- sudo
     - to run a command as the super user
 
 **a note on sudo**
@@ -486,7 +486,7 @@ id -g
 ### what are groups?
 groups are well, groups of users. a user can be in multiple groups. groups are used to manage permissions on files and directories. it is a convenient way to give multiple users access to the same files.
 
-when a user creates a file, the file is owned by the user and the group that the user is in. the user has a set of permissions that determine what they can do with the file. there are three types of permissions: 
+when a user creates a file, the file is owned by the user and the group that the user is in. the user has a set of permissions that determine what they can do with the file. there are three types of permissions:
 - read
 - write
 - execute
@@ -514,7 +514,7 @@ grep -i "root" /etc/group
 root:x:0:
 ```
 
-we could also use `getent`. `getent` is a command that gets entries from a database. in this case, we are getting the entry for the shadow group. the `gid` for the shadow group is always `42`. 
+we could also use `getent`. `getent` is a command that gets entries from a database. in this case, we are getting the entry for the shadow group. the `gid` for the shadow group is always `42`.
 
 `getent` actually shows us the entire entry for the shadow group, which includes the group `name:password:gid:members` (in that format).  now we will use `getent` to get the entry for the root group:
 
@@ -604,8 +604,8 @@ you can also use the `stat` command to see the permissions of a file. stat will 
 stat /etc/group
 
 # output
-  File: `/etc/group'
-  Size: 978             Blocks: 8          IO Block: 4096   regular file
+File: `/etc/group'
+Size: 978             Blocks: 8          IO Block: 4096   regular file
 Device: 801h/2049d      Inode: 99421       Links: 1
 Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
 student@ubuntu804Server:~$ .000000000 -0400Modify: 2024-10-02 17:49:25.000000000 -0400Change: 2024
@@ -625,7 +625,7 @@ the `%a` is a format string that tells stat to display the permissions in octal.
 
 # WYSINWYX
 
-now we will begin to really learn about cybersecurity. 
+now we will begin to really learn about cybersecurity.
 
 what you see is not what you execute. this is one of the most fundamental ideas in computer security. the idea is that your source code may seem fine, but what happens in the background at a low level may include hidden vulnerabilities.
 
@@ -638,7 +638,7 @@ where `password` is some pointer to a string that contains sensitive data and le
 
 the idea is that we can't trust the source code for program security. a better security check would be to examine the compiled code and test for vulnerabilities there. you never know what the compiler might do to your code.
 
-another such example is cases where libraries not part of the standard library are used. for example, in C, if you want to make a multithreaded program, you would typically use `pthread.h`, but this is an external library not part of the standard C framework. hence the compiler might create security risks for multithreaded programs that it would otherwise not have for single-threaded programs. 
+another such example is cases where libraries not part of the standard library are used. for example, in C, if you want to make a multithreaded program, you would typically use `pthread.h`, but this is an external library not part of the standard C framework. hence the compiler might create security risks for multithreaded programs that it would otherwise not have for single-threaded programs.
 
 ### unexpected function pointer behavior
 
@@ -661,7 +661,6 @@ int main() {
     int (*f) (void);
     // this is a function **pointer**
     // recall the syntax: int (*f) (void) means that f is a pointer to a function that returns and integer and takes no arguments (void)
-    
 
     int diff = (char*)&f2 - (char*)&f1; 
     // gives offset between f1 and f2
@@ -669,7 +668,6 @@ int main() {
     f = &f1;
     f = (int (*)())((char*)f + diff); 
     // f now points to f2
-    
     (*f)(); 
     // indirect call to f2
 }
@@ -685,7 +683,7 @@ buffer overruns are a common security vulnerability in C programs. they occur wh
 
 ## how buffer overruns work
 
-the idea is that we are able to write more data to a buffer than it can hold. for example, imagine suppose we are in a function. recall we will have some `$ebp` that points to the base of the stack frame. 
+the idea is that we are able to write more data to a buffer than it can hold. for example, imagine suppose we are in a function. recall we will have some `$ebp` that points to the base of the stack frame.
 
 what's special about `$ebp` is that usually the return address is stored right above it in memory. recall how a stack looks in memory (single stack frame):
 ```
@@ -705,7 +703,7 @@ Low Memory
 ```
 if we can somehow change the value of what is in the return address, we can change where the program will return to. this is the basis of a buffer overrun.
 
-suppose we have the address of a local variable in the function. for example, if we have an array on the stack, we know the array points to values that are just a few bytes below the base pointer. 
+suppose we have the address of a local variable in the function. for example, if we have an array on the stack, we know the array points to values that are just a few bytes below the base pointer.
 
 if we can calculate the offset between the local variable and the return address, we can overwrite the return address with the address of a function that we want to call. this is the basis of a buffer overrun. the only thing is; we would need permission to overwrite the return address.
 
@@ -742,9 +740,9 @@ int sumNums(int n, int m){
 		sum += i;
 		i=i+1;
 	}
-	
+
 	/*
-	 * modify this so 
+	 * modify this so
 	 * that the return address is overwritten with the address of hacked
 	c[0]=0xb0;
 	c[1]=0x25;
@@ -782,7 +780,7 @@ gdb ./stack
 
 we can then use `list` to list the sumNums and main function, then use `b` to set some breakpoints:
 ```bash
-list sumNums 
+list sumNums
 b 93 # before the "modify this" comment
 list main
 b 112 # on the call to sumNums
@@ -808,9 +806,9 @@ SQL stands for Structured Query Language. it is a language used to interact with
 
 ```SQL
 CREATE TABLE users (
-	id INT PRIMARY KEY,
-	name VARCHAR(100),
-	age INT
+id INT PRIMARY KEY,
+name VARCHAR(100),
+age INT
 );
 
 
@@ -909,7 +907,7 @@ connection.close()
 
 in this example, the `?` are placeholders for the data. the data is then bound to the placeholders using `mysqli_stmt_bind_param`. this way, the data is never executed as code, so SQL injections are prevented. this may seem trivial, but a lot of security vulnerabilities come down to simple mistakes like this. in fact, a third of all security vulnerabilities are due to SQL injections.
 
-let's just take a second to understand the code as well, in case you are unfamiliar with SQL. the sqlite3 is a library that allows us to interact with an sqlite database. we first connect to the database, then create a **cursor** object. a cursor is used to execute SQL queries. it's just like a cursor in a text editor, it points to a specific location in the database.  
+let's just take a second to understand the code as well, in case you are unfamiliar with SQL. the sqlite3 is a library that allows us to interact with an sqlite database. we first connect to the database, then create a **cursor** object. a cursor is used to execute SQL queries. it's just like a cursor in a text editor, it points to a specific location in the database.
 
 # forensic disk mounting
 
@@ -930,7 +928,7 @@ you can have a **virtual disk image** or a **physical disk image**. they are in 
 
 ## virtual disks
 
-a virtual disk (aka virtual disk image) is a disk image that is used by a virtual machine. as we know, virtual machines are software that allows you to run an operating system within another operating system. the virtual machine uses a virtual disk to store the operating system and data, and this disk is stored as a file on the host machine. 
+a virtual disk (aka virtual disk image) is a disk image that is used by a virtual machine. as we know, virtual machines are software that allows you to run an operating system within another operating system. the virtual machine uses a virtual disk to store the operating system and data, and this disk is stored as a file on the host machine.
 
 ### physical vs virtual disks
 so for distinction,
@@ -956,7 +954,7 @@ formats like `.vmdk`, `.vdi`, `.vhd`, and `.qcow2` contain additional metadata t
 ## boot sectors
 
 if you want to learn about boot sectors, here's a bit of info. this is a bit of an aside, so feel free to skip this section if you're not interested.
-  - boot sectors located at the beginning of the disk
+- boot sectors located at the beginning of the disk
   - they specifically known as sector 0
   - they tell the computer how to boot the operating system
   - every disk has a sector 0 (boot sector), but not every boot sector contains bootable code
@@ -972,8 +970,8 @@ if you want to learn about boot sectors, here's a bit of info. this is a bit of 
       - basic disk parameters
     - lacks actual boot code
     - more like a table of contents for the disk, rather than startup code
-  
-and this is why you can't just copy windows files to any disk and expect it to boot. the disk needs to have the correct boot sector. that is, you must make it bootable. 
+
+and this is why you can't just copy windows files to any disk and expect it to boot. the disk needs to have the correct boot sector. that is, you must make it bootable.
 
 there are two main types of boot sectors:
 1. master boot record (MBR)
@@ -1011,3 +1009,89 @@ these are often done using tools like:
 
 we will do the third approach in this section, *mount to VM*, using vmware's mount utility.
 
+## encrypting data
+
+### LUKS encryption
+linux unified kernel encryption (LUKS) is a disk encryption specification and the standard for linux disk encryption. it is not the encryption algorithm itself , but rather the format that standardizes how encrypted disks are structured and managed.
+
+#### algorithm agnostic
+LUKS is algorith agnostic , it can use different encryption algorithms: AES, sepent, twofish, etc. you can swap algorithms my re-encrypting. it defaults to a strong , well-tested algorithm.
+
+#### multiple key slots
+- supports up to 8 different keys/passphrases for the same encrypted volume. this means you can make 8 different passwords that all decrypt the exact same volume/data.
+- you can add/remove passwords without re-encrypting the entire disk
+
+#### how LUKS works
+LUKS uses a two layer encryption:
+1. **master key:** the thing that actually encrypts your data
+1. **key slots:** each passphrase encrypts a copy of the master key
+```
+Your Data ← encrypted with → Master Key
+                              ↑
+                         encrypted with
+                              ↓
+                      Passphrase 1, 2, 3...
+```
+
+### BitLocker encryption
+
+### encrypting whole partitions
+
+### creating encrypted containers
+a lot of the time you may want to not encrypt an entire partition but rather just a directory or segment inside the partition. you can do so by creating encrypted containers. we will first explore this in LUKS.
+
+we use `cryptsetup` , the standard open source userspace utility for setting up LUKS encryption and managing encrypted volumes. it is part of most linux distros by default.
+
+#### overview of making encrypted containers with LUKS
+1. make an a file full of zeroed data
+2. encrypt the file with LUKS using `cryptsetup` and set pass phrase
+3. open encrypted file with `cryptsetup` , LUKS maps it to `/dev/mapper/` as a virtual block device
+4. mount the block device
+5. format the data with whatever filesystem
+6. add whatever data you want
+7. unmount the block device then close it with `cryptsetup`
+
+here is a full walkthrough:
+
+```bash
+# first make some file with zeroed data , this is 1GB
+dd if=/dev/zero of=/path/to/encrypted_container.img bs=1M count=1024
+
+# now encrypt the file , you will have to set a passphrase
+cryptsetup luksFormat /path/to/encrypted_container.img
+
+# now open the encrypted file , will have to enter passphrase
+cryptsetup luksOpen /path/to/encrypted_container.img encrypted_volume
+# the above creates a block device at /dev/mapper/encrypted_volume
+
+# format the block device
+mkfs.ext4 /dev/mapper/encrypted_volume
+
+# mount
+mount /dev/mapper/encrypted_volume /mnt/encrypted_stuff
+
+# do whatever stuff , add data , etc.
+cd /mnt/encrypted_stuff
+# ...
+
+# now unmount and close block device
+umount /mnt/encrypted_stuff
+cryptsetup luksClose encrypted_volume
+```
+
+on subsequent accesses you would just do:
+```bash
+# decrypt container as virtual block device
+cryptsetup luksOpen /path/to/encrypted_container.img encrypted_volume
+
+# mount block device
+mount /dev/mapper/encrypted_volume /mnt/encrypted_stuff
+
+# do stuff
+cd /mnt/encrypted_stuff
+# ...
+
+# umount and close
+umount /mnt/encrypted_stuff
+cryptsetup luksClose encrypted_volume
+```
