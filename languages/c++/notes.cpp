@@ -111,7 +111,7 @@ int variadic_templates();
 
 int main() {
     // RUN
-    smart_pointers();
+    virtual_functions();
 }
 
 int what_is_cpp() {
@@ -552,7 +552,7 @@ int stdin_stdout() {
     // you might have expected this instead:
         // (2) Enter a word: hello world
         // (2) You entered: hello
-        // (3) Enter a word: 
+        // (3) Enter a word:
         // (3) You entered: world
     // but we did not get that because cin left the newline character in the buffer.
     // this might be even more confusing but the reason for this is as follows:
@@ -2178,7 +2178,7 @@ int ownership() {
 
     // for example , stack objects are owned by the function they are defined
     // in:
-    auto funco =  []() {
+    auto funco = []() {
         std::string name = "hello"; // function owns this vector
         std::vector<int> vec = {1, 2, 3}; // function owns this string
         std::cout << name << std::endl;
@@ -2533,20 +2533,68 @@ int virtual_functions() {
         void speak() { std::cout << "animal speaks" << std::endl; }
     };
 
-    class Cat {
+    class Cat : public Animal {
     public:
         void speak() { std::cout << "cat speaks" << std::endl; }
+        Cat() = default;
     };
 
-    Animal cat = cat();
-    car.speak(); // will print "animal speaks"
+    // briefly note that if we did something like:
+    Animal cat = Cat();
+    // this would cause class "slicing" , which means that the cat object ends up
+    // only holding the Animal portion of the data. we can't achieve polymorphism
+    // this way.
 
-    // since the type of the object is declared as Animal , it uses animal's speak()
-    // method , even though we called the cat() constructor. this is because we used
-    // Animal for the type. so at compile time , Animal::speak() is called.
+    // hence , we must use pointer.
+    Animal* car = new Cat();
+    std::cout << "car says: ";
+    car->speak(); // will print "animal speaks" .. we want 'cat speaks'
 
-    // to get around this , C++ deploys a dynamic member function calling system , using
-    // virtual tables. 
+    // another way to do this is use reference.
+    Cat cato = Cat();
+    Animal& cat_ref = cato;
+    cat_ref.speak();
+    // this won't slice cato. cat_ref contains everything cato does , achieving
+    // true polymorphism.
+
+    // for our pointer approach , since the type of the object is declared as
+    // Animal pointer , it uses animal's speak() method , even though we called
+    // the cat() constructor. this is because we used Animal for the type ,
+    // which means it is decided at compile time that Animal::speak() will be
+    // called.
+    delete car;
+
+    // to get around this , C++ deploys a dynamic member function calling system
+    // , using virtual tables. see the new classes below with "virtual" keyword:
+    class Animal2 {
+        public:
+        // have virtual keyword
+        virtual void speak() { std::cout << "animal speaks" << std::endl; }
+    };
+
+    class Cat2 : public Animal2 {
+    public:
+        // now overriding function needs to have "override" keyword
+        void speak() override { std::cout << "cat speaks" << std::endl; }
+        Cat2() = default;
+    };
+
+    Animal2* car2 = new Cat2();
+    std::cout << "car2 says: ";
+    car2->speak();
+    // now it prints "cat speaks". if we didn't add override keyword in Cat2 ,
+    // the code would compile fine but it would use Animal2::speak() instead.
+    // note that we can only add override keyword to member functions that are
+    // virtual in the parent class.
+    delete car2;
+
+    // we can also do this with reference types instead.
+    Cat2 car22 = Cat2();
+    Animal2& car22_ref = car22;
+    std::cout << "car22 says: ";
+    car22_ref.speak();
+
+    // well now we know how to use virtual functions. but how do they work ?
 
     return 0;
 }
