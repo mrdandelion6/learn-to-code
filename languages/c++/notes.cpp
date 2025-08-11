@@ -112,6 +112,7 @@ int variadic_templates();
 int main() {
     // RUN
     virtual_functions();
+    return 0;
 }
 
 int what_is_cpp() {
