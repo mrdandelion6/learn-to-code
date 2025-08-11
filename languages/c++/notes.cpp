@@ -1,6 +1,7 @@
 #include <fstream>
 #include <ios>
 #include <iostream>
+#include <iterator>
 #include <ostream>
 #include <fstream>
 #include <stdexcept>
@@ -87,14 +88,20 @@ int static_keyword();
 int inheritance();
 int polymorphism();
 int virtual_functions();
+int vtables();
+int diamond_problem();
+int pure_virtual_functions();
 int templates();
 int operator_overloading();
+int uniform_initialization();
 
-// MODERN C++ FEATURES
+// KEYWORDS
 int auto_keyword();
 int nullptr_keyword();
-int uniform_initialization();
-int const_expr();
+int inline_keyword();
+int static_keyword();
+int const_keyword();
+int const_expr_keyword();
 
 // STREAM I/O
 int stream_io();
@@ -111,7 +118,7 @@ int variadic_templates();
 
 int main() {
     // RUN
-    virtual_functions();
+    vtables();
     return 0;
 }
 
@@ -2526,8 +2533,16 @@ int polymorphism() {
 }
 
 int virtual_functions() {
-    // virtual functions are C++'s mechanism for achieving runtime polymorphism.
-    // for instance , consider the following case:
+    // virtual functions do a lot of stuff:
+    // 1. solve the diamond problem
+    // 2. proper cleanup with virtual destructors
+    // 3. pure virtual functions for abstract classes
+
+    // all of that being said , virtual functions are primarily known for being
+    // C++'s mechanism for achieving runtime polymorphism. that is what we will explore
+    // in this function.
+
+    // consider the following case demonstrating a need for dynamic polymorphism:
 
     class Animal {
     public:
@@ -2627,10 +2642,76 @@ int vtables() {
     class Vehicle {
     public:
         std::string name;
+        size_t weight;
         std::string getName() { return name; }
-        virtual void rev() { }
+        virtual void rev() { std::cout << "vroom" << std::endl; }
+        virtual size_t getWeight() { return weight; }
     };
 
+    class Car : public Vehicle {
+    public:
+        void rev() override {
+            std::cout << "beep" << std::endl;
+        }
+    };
+
+    // both vehicle and car get a vtable because vehicle uses a virtual function.
+    // vehicle vtable: [&Vehicle::rev, &Vehicle::getWeight]
+    // car vtable:     [&Car::rev,     &Vehicle::getWeight]
+
+    // note that we don't add any non virtual functions in the vtable. observe
+    // that the second function in the vtable for car is also getWeight() from
+    // Vehicle class. this is because we never overrode it , so this is what the
+    // compiler generates.
+
+    // 2. OBJECT INSTANTIATION
+    // when we instantiate an object with a virtual function , the object's
+    // constructors are called and a pointer to the vtable is generated. so when
+    // we do:
+    Car caro = Car();
+    // this first calls the parent constructor and assigns a vptr to Vehicle's
+    // vtable. after the child constructor is called and vptr gets updated to
+    // point to Car's vtable.
+
+    // 3. VIRTUAL DISPATCH
+    // even though every virtual class object gets a vtable , virtual dispatch
+    // only happens when calling through a base class pointer or reference.
+    // when you call directly on a concrete object , the compiler often
+    // optimizes away the vtable lookup since it knows the exact type. not
+    // guanteed though.
+    Vehicle v1 = Vehicle();
+    std::cout << "v1.rev(): ";
+    v1.rev(); // may skip vtable lookup (compiler optimization)
+
+    // however , if we call through a pointer to the same object:
+    Vehicle* v1_ptr = &v1;
+    std::cout << "v1_ptr->rev(): ";
+    v1_ptr->rev(); // uses vtable lookup , but still calls Vehicle::rev
+
+    // now consider polymorphism - pointing to a derived object:
+    Vehicle* v2_ptr = &caro;
+    std::cout << "v2_ptr->rev(): ";
+    v2_ptr->rev(); // vtable lookup finds Car::rev and calls it
+
+    // important: this creates a NEW object through object slicing!
+    // v2 becomes a Vehicle object , losing all Car-specific data.
+    Vehicle v2 = *v2_ptr; // object slicing - creates Vehicle from Car
+    std::cout << "v2.rev(): ";
+    v2.rev(); // calls Vehicle::rev because v2 IS a Vehicle object now
+
+    // to see the difference , try with a reference instead:
+    Vehicle& v2_ref = *v2_ptr;
+    std::cout << "v2_ref.rev(): ";
+    v2_ref.rev(); // vtable lookup , calls Car::rev (no slicing)
+
+    return 0;
+}
+
+int diamond_problem() {
+    return 0;
+}
+
+int pure_virtual_functions() {
     return 0;
 }
 
