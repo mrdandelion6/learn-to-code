@@ -2596,11 +2596,44 @@ int virtual_functions() {
     car22_ref.speak();
 
     // well now we know how to use virtual functions. but how do they work ?
+    // the next function explains the use of vtables and how they allow for
+    // virtual functions to do what they do--how dynamic polymorphism is
+    // possible in a compiled language like C++.
+    return 0;
+}
+
+int vtables() {
+
+    // VIRTUAL TABLES
+    // vtables are the mechanism C++ uses to implement runtime polymorphism.
+    // a vtable is a table of function pointers that the compiler creates for
+    // each class with virtual functions. each object of such a class has a
+    // hidden pointer (called vptr) that points to its class' vtable.
+    // remember , one vtable per class , not per object. a vtable is like an
+    // array.
+
+    // HOW VTABLES WORK
+    // when a virtual function is called , the program follows the object's vptr
+    // to it. this happens because the compiler replaces all virtual function
+    // calls at compile time. there is actually quite a bit at play here , so
+    // don't worry if you can't understand it right away. we will go through it
+    // one part at a time.
+
+    // 1. GENERATION OF VTABLES
+    // first of all , during compilation , a vtable is made for each class with
+    // virtual functions or with a parent that has virtual functions. suppose we
+    // have the following classes:
+
+    class Vehicle {
+    public:
+        std::string name;
+        std::string getName() { return name; }
+        virtual void rev() { }
+    };
 
     return 0;
 }
 
 int templates() {
-
     return 0;
 }
