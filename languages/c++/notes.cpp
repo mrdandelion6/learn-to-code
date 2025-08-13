@@ -30,6 +30,7 @@
 // you can jump to the function definition for each prototype to see a specific topic
 // note that these topics are not always in exact order, e.g) things from oop section may precede topics in memory and resources
 // to run the code for a specific topic, just call it in the main() function by replacing the function under "// RUN"
+// to see how to compile , read compilation_flags()
 
 // INTRO
 int what_is_cpp();
@@ -43,7 +44,7 @@ int cmake();
 
 // BASIC PRINTING
 int stdin_stdout();
-int no_flush();
+int flushing_the_buffer();
 
 // STANDARD LIBRARY
 int stl();
@@ -401,14 +402,17 @@ int compilation_flags() {
     // where -o is a flag for the output executable name (notes)
 
     // in C++ we have
-        // g++ -o notes notes.c 
+        // g++ -o notes notes.c
+    // this uses the g++ compiler. an alternative is MVSC from microsoft.
+    // note that you will usually use CMake for large projects , and compilation
+    // can get really complex. for these notes you only need g++.
 
     // the only difference is that c++ has some specific flags:
         // -fno-exceptions: disable exception handling
         // -fno-rtti: disable runtime type info
         // -fvisibility: control symbol visibility
 
-    // even debugging with gdb is the same. just add a -g
+    // even debugging with gdb is the same. just add a -g.
 
     return 0;
 }
@@ -618,7 +622,7 @@ void _sleep_for(int ms) {
     std::this_thread::sleep_for(std::chrono::microseconds(ms));
 }
 
-int no_flush() {
+int flushing_the_buffer() {
     // in this function you see how different things flush the buffer.
 
     // newline flushes the buffer
@@ -645,7 +649,6 @@ int no_flush() {
 }
 
 int stl() {
-
     // recall the C standard library.
     // even though we have a header called <stdlib.h>, the entire C standard library consists of much more headers.
     // here are some of the headers that make up the C standard library:
@@ -1404,8 +1407,10 @@ int aggregates() {
         // 3. no virtual functions of virtual base classes
         // 4. no default member initializers
 
-    // don't worry if you don't know about virtual functions and deffault member initializers. we will cover these topics later.
-    // if you don't know about constructors or access specifiers (private, protected, public), then you can see the respective functions: constructors_destructors() and classes().
+    // don't worry if you don't know about virtual functions and default member
+    // initializers. we will cover these topics later. if you don't know about
+    // constructors or access specifiers (private, protected, public), then you
+    // can see the respective functions: constructors_destructors() and classes().
 
     // STRUCTS
     // here's an example of an aggregate struct:
@@ -1434,11 +1439,11 @@ int aggregates() {
         int y;
     };
 
-    // Point3 p3 = {1, 2}; 
+    // Point3 p3 = {1, 2};
     // uncommenting this gives an error.
 
     // this doesn't work either:
-    // Point3 p3 = {1}; 
+    // Point3 p3 = {1};
 
     // can only do this:
     Point3 p3;
@@ -2769,6 +2774,95 @@ int diamond_problem() {
 }
 
 int pure_virtual_functions() {
+    // pure virtual functions are virtual functions with no implementation in
+    // the base class. these enable abstract classes that cannot be instantiated
+    // directly , and thus provide a strict polymorphic design which derived
+    // classes are required to implement.
+
+    class Shape {
+    public:
+        virtual double area() = 0;  // pure virtual function
+        virtual void draw() = 0;    // another pure virtual function
+    };
+
+    // the = 0 syntax tells the compiler that this function has no
+    // implementation in this class and must be overriden by derived classes.
+
+    // ABSTRACT CLASSES
+    // any class that contains one or more pure virtual functions becomes an
+    // abstract class. the class Shape above is an abstract class. you cannot
+    // instantiate abstract classes directly.
+
+    // uncommenting the below gives an
+    // error when compiling.
+    // Shape s;
+
+    class Circle : public Shape {
+    private:
+        double radius;
+    public:
+        Circle(double r) : radius(r) {}
+
+        double area() override {  // must implement
+            return 3.14159 * radius * radius;
+        }
+
+        void draw() override {    // must implement
+            std::cout << "Drawing a circle..." << std::endl;
+        }
+    };
+
+    // if we do not implement every pure virtual function in the derived class ,
+    // then the derived class is still considered an abtsract class and cannot
+    // be directly instantiated.
+    class Square : public Shape {
+    private:
+        double side;
+    public:
+        Square(double s) : side(s) {}
+        // here we omit the implementation of area()
+    };
+
+    // since we didn't implement the pure virtual function area() , Square is
+    // an abstract class and we cannot do the following:
+    // Square sq(15);
+
+    // since we implemented all the pure virtual functions in the Circle class ,
+    // it is not considered an abstract class. we say that classes which are not
+    // abstract are "concrete". we can instantiate concrete classes.
+    Circle circ(5);
+
+    // and of course , we can use abstract classes and pure virtual functions
+    // for strict polymorphism.
+    class Rectangle : public Shape {
+    private:
+        double l;
+        double w;
+    public:
+        Rectangle(float l, float w) : l(l), w(w) {}
+        double area() { return l * w; }
+        void draw() { std::cout << "Drawing rectangle..." << std::endl; }
+    };
+
+    // some workload with the individualized classes abstracted away ... only
+    // access them through an interface , which is the base abstract class.
+    auto processShape = [](Shape* shape) {
+        std::cout << "Area: " << shape->area() << std::endl;
+    };
+
+    Circle circ2(6);
+    Rectangle rect(2, 6);
+
+    // also note that all the things regarding the override keyword for virtual
+    // functions apply exactly the same for pure virtual functions. you may end
+    // up accidentally having a derived class that is also abstract because you
+    // did not use the override keyword and didn't catch a signature mismatch ,
+    // i.e. left a pure virtual function unimplemented accidentally.
+
+    return 0;
+}
+
+int virtual_constructors_destructors() {
     return 0;
 }
 
