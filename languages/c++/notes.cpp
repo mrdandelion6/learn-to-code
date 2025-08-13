@@ -89,6 +89,7 @@ int inheritance();
 int polymorphism();
 int virtual_functions();
 int vtables();
+int override_keyword();
 int diamond_problem();
 int pure_virtual_functions();
 int templates();
@@ -2618,7 +2619,6 @@ int virtual_functions() {
 }
 
 int vtables() {
-
     // VIRTUAL TABLES
     // vtables are the mechanism C++ uses to implement runtime polymorphism.
     // a vtable is a table of function pointers that the compiler creates for
@@ -2703,6 +2703,63 @@ int vtables() {
     Vehicle& v2_ref = *v2_ptr;
     std::cout << "v2_ref.rev(): ";
     v2_ref.rev(); // vtable lookup , calls Car::rev (no slicing)
+
+    return 0;
+}
+
+int override_keyword() {
+    // THE OVERRIDE KEYWORD
+    // the override keyword is not actually needed for the code to compile and
+    // work. it's optional , but highly recommended for safety reasons. if you
+    // don't declare override , but still correctly override the function--you
+    // have the exact same signature in the derived class--then all will work
+    // fine:
+
+    class Fruit {
+    public:
+        virtual void squeeze() {
+            std::cout << "squeezing fruit..." << std::endl;
+        }
+    };
+
+    class Banana : public Fruit {
+        void squeeze() { // exact same signature
+            std::cout << "smushing banana..." << std::endl;
+        }
+    };
+
+    Fruit* banana = new Banana();
+    banana->squeeze(); // will print 'smushing bananas...'
+    delete banana;
+    // Banana::squeeze() has exact same signature as Fruit::squeez() , so it
+    // overrides it.
+
+    // the issue with this however , is that if you accidentally had a
+    // mismatching signature between the derived and base class , then you might
+    // not even know: you would have a silent bug. the code will compile fine ,
+    // but banana->squeeze() would call the base class' implementation.
+
+    // here's an example
+    class BadFruit {
+    public:
+        virtual void juice(int ml) {
+            std::cout << "juiciing " << ml << " ml of fruit." << std::endl;
+        }
+    };
+
+    class BadBanana : public BadFruit {
+        void juice() { // signature doesn't match
+            std::cout << "juiciing banana." << std::endl;
+        }
+    };
+
+    BadFruit* bad_banana = new BadBanana();
+    bad_banana->juice(5.0); // silent bug! uses Fruit::juice
+    delete bad_banana;
+
+    // if you had put the override keyword in the derived class , then it your
+    // LSP and compiler would have pointed out that there was no matching
+    // signature for a virtual function in the base class.
 
     return 0;
 }
