@@ -1,4 +1,5 @@
 #include <fstream>
+#include <type_traits>
 #include <ios>
 #include <iostream>
 #include <iterator>
@@ -58,9 +59,11 @@ int sets();
 
 // LANGUAGE FEATURES
 int references();
-int aggregates();
-int size_t_type();
 int range_based_for();
+int lvalues_rvalues();
+int aggregates();
+int macros();
+int deleted_functions();
 int lambda_functions();
 int namespaces();
 int scope_resolution_operator();
@@ -68,6 +71,8 @@ int function_overloading();
 int exceptions();
 int exception_handling();
 int default_arguments();
+int concepts();
+int pragma();
 
 // MEMORY AND RESOURCES
 int free_and_malloc_review();
@@ -1516,6 +1521,93 @@ int aggregates() {
 
     Aggregate a2 = {1};    // sets x=1, y is zero-initialized
     // NonAggregate n2 = {1}; // won't compile - constructor needs 2 args
+
+    return 0;
+}
+
+int macros() {
+    // TODO: make notes
+    return 0;
+}
+
+// some functions for the notes in deleted_functions() section.
+void bad_function(int a) = delete;
+void set_volume(int level) { std::cout << "volume set to " << level << std::endl; }
+void set_volume(float) = delete;
+void set_volume(double) = delete;
+
+int deleted_functions() {
+    // a deleted function is one that is explicitly marked with `delete`. when
+    // you try to call a deleted function , the compiler will generate an error
+    // instead of using it. for example , we have a deleted function right above
+    // this section , `bad_function(int a)`.
+
+    // bad_function(5);
+    // uncommenting the above will give the following error:
+    /**
+        $ g++ .\notes.cpp
+        .\notes.cpp: In function 'int deleted_functions()':
+        .\notes.cpp:XXXX:XX: error: use of deleted function 'void bad_function(int)'
+         XXXX |     bad_function(5);
+              |     ~~~~~~~~~~~~^~~
+        .\notes.cpp:XXXX:X: note: declared here
+         XXXX | void bad_function(int a) = delete;
+              |      ^~~~~~~~~~~~
+    */
+
+    // you might wonder what the point of this is. this can be useful from
+    // preventing unwanted conversions. see the function set_volume(int level)
+    // defined above. see that we delete set_volume with float and double args.
+
+    // this means we can call:o
+    set_volume(3);
+
+    // but not
+    // set_volume(3.5);
+    // uncommenting the above gives an error at compilation.
+
+    // this idea extends to things like memory management safety. for example ,
+    // suppose we only want to have our arguments as string type:
+    /**
+    void processData(const std::string& data) {
+        // safe: takes string reference
+        std::cout << "Processing: " << data << std::endl;
+    }
+
+    void processData(char*) = delete;
+    void processData(const char*) = delete;
+   */
+    // this forces only string usage.
+
+    // deleted functions are also used in member functions for classes. you can
+    // delete copy and assignment and you can prevent type conversion. consider
+    // this class:
+
+    class DatabaseConnection {
+    private:
+        DatabaseConnection() = default;
+
+    public:
+        static DatabaseConnection& getInstance() {
+            static DatabaseConnection instance;
+            return instance;
+        }
+
+        // delete copy constructor
+        DatabaseConnection(const DatabaseConnection&) = delete;
+
+        // delete assignment operator
+        DatabaseConnection& operator=(const DatabaseConnection&) = delete;
+
+        // also delete move operations for strict singleton
+        DatabaseConnection(DatabaseConnection&&) = delete;
+        DatabaseConnection& operator=(DatabaseConnection&&) = delete;
+
+        void connect() { /* database connection logic */ }
+    };
+    // you may not know about move operartions and std::move yet. if so , don't
+    // worry. you will learn about later on in constructors_destructors(). same
+    // goes for copy constructors.
 
     return 0;
 }
