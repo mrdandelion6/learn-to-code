@@ -88,7 +88,7 @@ int oop();
 int classes();
 int access_specifiers();
 int structs();
-int initializer_list();
+int initializer_lists();
 int constructors_destructors();
 int static_keyword();
 int inheritance();
@@ -911,6 +911,7 @@ int references() {
     // POINTERS vs REFERENCES
     // a pointer stores the value of the memory address of a variable...
     // whereas a reference stores the same value of an already existing variable, and has the same address in memory.
+    // it's like making a pointer and working with the derefenced value of it.
 
     // USAGE
     // you might already be familiar with references in python
@@ -1636,7 +1637,7 @@ int free_and_malloc_review() {
     int* nums = (int*)malloc(10 * sizeof(int));  // you specify 40 bytes
 
     // internally, most implementations do something like storing the size of
-    // array just befor your data like this:
+    // array just before your data like this:
 
     // [SIZE_INFO][YOUR_DATA_STARTS_HERE]
     //            ^-- your pointer points here
@@ -1657,7 +1658,7 @@ int free_and_malloc_review() {
 }
 
 int memory_model() {
-
+    // TODO: complete this section
     return 0;
 }
 
@@ -1828,7 +1829,6 @@ int oop() {
         // member initializer lists
         // default and delete functions
         // rule of three/five
-
 
         // in the coming sections we will delve into all of these topics
     return 0;
@@ -2002,7 +2002,7 @@ int structs() {
     return 0;
 }
 
-int initializer_list() {
+int initializer_lists() {
     // before we get into the different kinds of constructors and destructors, we will go over some unique C++ syntax for initializing class members.
 
     // consider the following class
@@ -2100,6 +2100,47 @@ int initializer_list() {
         Example() : b(42), a(b) { }  // DANGEROUS! 'a' gets undefined value
     };
 
+    // WHY USE INTITIALIZER_LISTS
+    // it is not only more readable , but also more efficient for class type
+    // data members. when using assignment in the constructor body , you end up
+    // doing two things:
+    // 1. default constructing objects
+    // 2. assigning new values to objects
+
+    // for intitializer lists , you directly initialize the values by calling
+    // their parameterized constructors. that is one operation instead of 2.
+    // a parameterized constructor is simply a constructor that takes parameters
+    // but you will learn more about this in constructors_destructors().
+
+    // another note is that references and consts members must be initialized.
+    // they can't be assigned. for example:
+    class Wrapper {
+        int& ref;
+    public:
+        Wrapper(int& r) : ref(r) {}
+
+        // we can't do this ,
+        // Wrapper(int& r) { ref = r; }
+    };
+    // because when you try to assign a reference in the constructor body ,
+    // the reference member was never initialized to begin with. ref was
+    // never initialized , so when we get to ref = r , the compiler sees
+    // this as trying to use an uninitialized reference , which is not
+    // allowed.
+
+    // intializer lists on the other hand are like directly initializing the
+    // members. like doing:
+    int r = 5;    // r is the integer reference we pass in
+    int& ref = r; // initialize list essentially does this
+
+    // for assigning in the body , it's like this:
+    // int& ref2;
+    // ref2 = r;
+    // uncommenting the `int& ref2;` gives an error because you cannot have
+    // uninitialized references. which is what the problem is with not using
+    // initializer lists.
+
+    // same
     return 0;
 }
 
