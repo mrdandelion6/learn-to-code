@@ -968,6 +968,16 @@ int references() {
     // note that we passed in dada which is of type int into the parameter for
     // `a` which is of type &int. this is how references as parameters work.
 
+    // REASSIGNING REFERENCES
+    int a = 10;
+    int b = 20;
+    int& ref = a; // ref now refers to a
+    ref = b; // ref still refers to a
+    // but now the value of a and ref have been set to the same as b
+    ref++; // doesn't affect b , only a and ref
+    std::cout << "a: " << a << std::endl;     // 21
+    std::cout << "b: " << b << std::endl;     // 20
+    std::cout << "ref: " << ref << std::endl; // 21
     return 0;
 }
 
