@@ -37,6 +37,7 @@
 int what_is_cpp();
 int data_types();
 int objects();
+int declaring_defining_initializing();
 
 // COMPILING
 int compiling_cpp();
@@ -341,6 +342,30 @@ int objects() {
     // in this case, arr contains two objects.
     // however there exists no variables that identify these objects.
 
+    return 0;
+}
+
+int declaring_defining_initializing() {
+    // declaration is when you just announce something exists--doesn't
+    // allocate any memory for it anywhere:
+    extern int gagaga;
+    // extern just specifies that this variable/function is defined somewhere
+    // else.
+
+    // definition is when you actually create the variable , this allocates
+    // storage:
+    int x;
+
+    // initialization is when you give something a value at the point of
+    // definition:
+    int y = 10;
+
+    // when you give something a value afterwards , we call that assignment
+    // rather than initalization:
+    x = 10;
+
+    // these distinctions become even more important later on when we deal with
+    // classes.
     return 0;
 }
 
@@ -2168,7 +2193,7 @@ int constructors() {
         // 1.) default constructor: no parameters
         // 2.) parameterized constructor: takes params
         // 3.) copy constructor: creates a copy from an existing object
-        // 4.) move constructor: transfers "ownership" (only in c++)
+        // 4.) move constructor: transfers "ownership"
 
     // SYNTAX
     // constructors and destructors must have the same name as the class that
