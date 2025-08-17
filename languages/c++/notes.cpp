@@ -137,7 +137,7 @@ int variadic_templates();
 
 int main() {
     // RUN
-    vtables();
+    constructors();
     return 0;
 }
 
@@ -2273,6 +2273,107 @@ int constructors() {
         Point(int xVal, int yVal) : x(xVal), y(yVal) {} // two parameters
     };
     // pretty clear why this is useful.
+
+    // CONSTRUCTORS AND INHERITANCE
+    // when you have inheritance , constructors are called from the base class
+    // first. this happens implicitly , you don't explicitly call the base
+    // constructor in most cases. consider the following classes:
+    class Base {
+    public:
+        Base() { std::cout << "Base default constructor\n"; }
+    };
+    class Derived : public Base {
+    public:
+        Derived() { std::cout << "Derived constructor\n"; }
+    };
+
+    Derived d; // output: "base default constructor" then "derived constructor"
+
+    // for parameterized constructors:
+    class Base1 {
+    public:
+        Base1() { std::cout << "Base1 default constructor\n"; }
+    };
+    class Derived1 : public Base1 {
+        int x;
+    public:
+        Derived1(int n) : x(n) { std::cout << "Derived1 constructor\n"; }
+    };
+    Derived1 d1(5);
+    // output: "base1 default constructor" then "derived1 constructor"
+    // as you see , the parameterized constructor still calls the base class
+    // constructor. if you're wondering 'why?' then consider if the base class
+    // had some data members. the derived class would want to inherit those and
+    // thus the base class constructor must be called to define those values.
+
+    // now what if we want to call the parameterized base constructor ? then we
+    // need to call it explicitly:
+    class Animal {
+    public:
+        std::string name;
+        Animal(std::string name) : name(name) {}
+    };
+    class Cat : public Animal {
+        int fluff_level;
+
+        // we can't have this , we need to explicitly call the base constructor.
+        // uncommenting the below will give an error:
+        // Cat(int f, std::string name): fluff_level(f) {}
+
+        // we need to call it like so:
+        Cat(int f, std::string name) : Animal(name), fluff_level(f) {}
+
+        // also note that we cannot have any default constructors for Cat since
+        // we do not have one for its base class Animal:
+        Cat() = default;
+        // this ends up being deleted.. won't cause any compile issues. if you
+        // don't know about default constructors , don't worry , you will learn
+        // about them in default_constructors()
+    };
+
+    // similarly , if we define no constructor for a derived class whose parent
+    // has no default constructor , then the compiler will generate a deleted
+    // default constructor for the derived class:
+    class Dog : public Animal {
+    public:
+        bool neutered;
+    };
+    // doing the below causes an error for calling a deleted function:
+    // Dog doggo;
+    // if you are unfamliar with compilers automatically generating constructors
+    // then don't worry , you will learn about that in default_constructors() as
+    // well.
+
+    // but what happens if we have both a default and a parameterized constructor
+    // in the base class ?
+    class Employee {
+        int age;
+        int salary;
+    public:
+        Employee() {
+            std::cout << "default employee constructor called" << std::endl;
+        }
+        Employee(int age, int pay) : age(age), salary(pay) {
+            std::cout << "parameterized employee constructor called" 
+                << std::endl ;
+        }
+    };
+
+    class HourlyEmployee : public Employee {
+        int hours;
+    public:
+        HourlyEmployee(int age, int pay, int hours) : Employee(age, pay),
+            hours(hours) {
+            std::cout << "hourly employee constructor called" << std::endl;
+        }
+    };
+
+    // this calls only the base class' parameterized constructor , we won't call
+    // the base class' default constructor if we make an explicit call to the
+    // parameterized one.
+    HourlyEmployee emp(5, 60, 100);
+    // if we hadn't made the specific call , then we would've called the default
+    // constructor instead.
 
     return 0;
 }
