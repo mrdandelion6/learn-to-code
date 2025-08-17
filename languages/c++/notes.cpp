@@ -89,8 +89,10 @@ int classes();
 int access_specifiers();
 int structs();
 int initializer_lists();
-int constructors_destructors();
-int static_keyword();
+int constructors();
+int default_constructors();
+int trivial_constructors();
+int destructors();
 int inheritance();
 int polymorphism();
 int virtual_functions();
@@ -98,6 +100,7 @@ int vtables();
 int override_keyword();
 int diamond_problem();
 int pure_virtual_functions();
+int virtual_constructors_destructors();
 int templates();
 int operator_overloading();
 int uniform_initialization();
@@ -107,8 +110,16 @@ int auto_keyword();
 int nullptr_keyword();
 int inline_keyword();
 int static_keyword();
+int noexcept_keyword();
 int const_keyword();
 int const_expr_keyword();
+int explicit_keyword();
+
+// PRIMITIVES
+// TODO: add more functions for other types
+int pointer_type();
+int int_types();
+int size_t_type();
 
 // STREAM I/O
 int stream_io();
@@ -1426,7 +1437,7 @@ int aggregates() {
     // don't worry if you don't know about virtual functions and default member
     // initializers. we will cover these topics later. if you don't know about
     // constructors or access specifiers (private, protected, public), then you
-    // can see the respective functions: constructors_destructors() and classes().
+    // can see the respective functions: constructors() and classes().
 
     // STRUCTS
     // here's an example of an aggregate struct:
@@ -1617,7 +1628,7 @@ int deleted_functions() {
         void connect() { /* database connection logic */ }
     };
     // you may not know about move operartions and std::move yet. if so , don't
-    // worry. you will learn about later on in constructors_destructors(). same
+    // worry. you will learn about later on in constructors(). same
     // goes for copy constructors.
 
     return 0;
@@ -2110,7 +2121,7 @@ int initializer_lists() {
     // for intitializer lists , you directly initialize the values by calling
     // their parameterized constructors. that is one operation instead of 2.
     // a parameterized constructor is simply a constructor that takes parameters
-    // but you will learn more about this in constructors_destructors().
+    // but you will learn more about this in constructors().
 
     // another note is that references and consts members must be initialized.
     // they can't be assigned. for example:
@@ -2144,21 +2155,148 @@ int initializer_lists() {
     return 0;
 }
 
-int constructors_destructors() {
-    // we have already seen constructors and destructors being used a few times now.
-    // we will delve a bit deeper into them now.
+int constructors() {
+    // we have already seen constructors being used a few times. we will delve a
+    // bit deeper into them now.
 
     // DIFFERENT TYPES OF CONSTRUCTORS
-    // suppose you want to create an "empty" object of a class with no parameters passed in.
-    // or suppose you want to create an object with parameters.
-    // or suppose you want to copy the data from one object into another, that is; have them reference the same data
-    // for this we need different kinds of constructs:
+    // suppose you want to create an "empty" object of a class with no
+    // parameters passed in. or suppose you want to create an object with
+    // parameters. or suppose you want to copy the data from one object into
+    // another, that is; have them reference the same data for this we need
+    // different kinds of constructors:
         // 1.) default constructor: no parameters
         // 2.) parameterized constructor: takes params
         // 3.) copy constructor: creates a copy from an existing object
         // 4.) move constructor: transfers "ownership" (only in c++)
 
-    // example class
+    // SYNTAX
+    // constructors and destructors must have the same name as the class that
+    // they are made for.
+    class Vehicle {
+    private:
+        int year;
+    public:
+        Vehicle(int year) : year(year) {}
+        ~Vehicle() = default;
+    };
+    // see that we have a member function with the signature `Vehicle(int year)`
+    // that is the constructor. and ~Vehicle() is the destructor. don't worry
+    // if you don't know what `default` means right now , just recognize that
+    // the name of constructor must be same as the class name , and the name of
+    // destructor must be same as class name with ~ prefix.
+
+    // since there are 4 different constructors , and many nuances to each ,
+    // i have split the notes into subsections:
+    // - default_constructors()
+    // - trivial_constructors()
+
+    // PARAMETERIZED CONSTRUCTORS
+    // these are pretty straight forward. all parameterized constructors are
+    // user defined. a parameterized constructor allows you to pass values and
+    // execute some code when creating an object , giving you control over how
+    // the object is initialized.
+
+    // here is an exarmple
+    class Rect {
+    private:
+        int width, height;
+
+    public:
+        // parameterized constructor
+        Rect(int w, int h) {
+            width = w;
+            height = h;
+            std::cout << "making rect!" << std::endl;
+        }
+    };
+
+    // always prefer using intitializer lists over assignment in constructors ,
+    // especially for const members , references , and objects without default
+    // constructors. this is because with initializer lists , you're actually
+    // initializing the members. with assignment in the constructor body ,
+    // you're first default constructing them , then assigning new values. to
+    // see more , read the initializer_lists() function
+
+    // using intializing lists
+    class Rectangle {
+    private:
+        int width, height;
+
+    public:
+        // parameterized constructor
+        Rectangle(int w, int h) {
+            width = w;
+            height = h;
+            std::cout << "making rect!" << std::endl;
+        }
+    };
+
+    // note then when you use parameterized constructors , or define any
+    // constructor for that matter , the compiler will not automatically
+    // generate a default constructor. you will have to explicitly define it
+    // with = default. see the default_constructors() section for more.
+
+    // CONSTRUCTOR OVERLOADING
+    // you can have many different signatures for constructors.
+    class Point {
+    private:
+        int x, y;
+
+    public:
+        Point(int val) : x(val), y(val) {}              // single parameter
+        Point(int xVal, int yVal) : x(xVal), y(yVal) {} // two parameters
+    };
+    // pretty clear why this is useful.
+
+    return 0;
+}
+
+int default_constructors() {
+    // consider the following class:
+    class Doggo {
+    private:
+        char* name;
+        int age;
+        char* breed;
+        int weight;
+    public:
+        Doggo() {} // this is a default constructor
+    };
+    // in the class above , see that there are no parameters for the
+    // constructor. when a constructor can be called with no arguments , we say
+    // it is a default constructor. there are three types of default
+    // constructors:
+    // 1. compiler generated default constructor
+    // 2. explicitly default constructor
+    // 3. user defined default constructor
+
+    // the one above is a user-defined default constructor. this is similiar to
+    // an explicitly defined default constructor , but there are subtle
+    // differences. below is an explicitly defeault constructor
+    class Cato {
+    private:
+        char* name;
+        int age;
+        char* breed;
+        int weight;
+    public:
+        Cato() = default; // explicitly default constructor
+    };
+    // `Cato() = default` asks the compiler to generate the default constructor
+    // for us. the explicitly default construct , `Cato = default` , is
+    // usually a better version of using a user defined default constructor ,
+    // like `Doggo() {}`. to see the differences between them , check out the
+    // default_constructors() function below.
+
+    // in both cases , now that we have a default constructor , we can create
+    // objects without explicitly initializing them.
+    Cato cato;
+    // this implicitly initializes them with the default constructor. that is
+    // exactly what default constructors are for.
+
+    // DIFFERENCE BETWEEN EXPLICIT AND USER DEFINED DEFAULT CONSTRUCTOR
+    // consider these two classes:
     class Dog {
     private:
         char* name;
@@ -2166,9 +2304,237 @@ int constructors_destructors() {
         char* breed;
         int weight;
     public:
-        Dog() {}
+        Dog() {} // user defined default constructor
     };
 
+    class Cat {
+    private:
+        char* name;
+        int age;
+        char* breed;
+        int weight;
+    public:
+        Cat() = default; // explicitly default constructor
+    };
+
+    // the diffence between Dog() {} and Cat() = default is that:
+    // - explicit default constructor yields a trivial constructor if all member
+    //   variables have default constructors. user-defined is always non trivial.
+    //   to understand what trivial constructors are , see the function
+    //   trivial_constructors() below.
+    //
+    // - explicit default would generate the default constructor with all the
+    //   implicit properties like constexpr and noexcept when possible. user
+    //   defined does not implicitly apply noexcept or constexpr. you need to
+    //   declare those on your own.
+    //
+    // - for explicit default , if the class can't be default constructed (it
+    //   has a reference or const member without a default member initializer ,
+    //   we'll see an example below) then the compiler will declare the
+    //   constructor as deleted. the class will then remain valid to declare ,
+    //   but won't be instantiable and give "deleted function" errors when you
+    //   try. for user-defined , the constructor will NOT be declared as deleted
+    //   and instead will just be ill-formed. this means you will get a compile
+    //   error. if you don't know what a deleted function is , see the section
+    //   deleted_functions()
+
+    // here is an example of when explicit default makes the constructor
+    // deleted.
+
+    class Example1 {
+        int& ref; // reference must be default initialized
+    public:
+        Example1() = default; // this becomes implicitly deleted
+        Example1(int& ref) : ref(ref) {}
+    };
+    // the reason the compiler will implicitly delete the default constructor is
+    // because it doesn't have any vaue for ref. it's a reference so it needs to
+    // refer to something. you can't have an empty reference. you would need to
+    // initilize the ref in the constructor .. i.e, need something to be passed
+    // to it , like in Example1(int& ref). if we tried to call Example1() , we
+    // would get an error at compile time for calling a deleted function.
+    // uncomment this and test for yourself:
+    // Example1 ex = Example1();
+
+    // if this was user-defined instead , the code would just not compile at
+    // all , even if we didn't call the constructor.
+
+    class Example2 {
+        int& ref;
+    public:
+        // uncommenting the below will cause a compilation error as it is ill
+        // defined.
+        // Example2() {};
+    };
+
+    // we get similar deletion for when we have a const member that is not
+    // default initialized:
+    class Example3 {
+        const int x;
+    public:
+        Example3() = default; // this becomes implicitly deleted
+
+        // we would need this:
+        Example3(int num) : x(num) {};
+    };
+
+    // also happens if one of our data members is not default initialized and
+    // has no default constructor.
+    class Tensor {
+        std::vector<int> dims;
+    public:
+        // no default constructor
+        Tensor(std::vector<int> dims) : dims(dims) {}
+    };
+
+    class Log {
+        Tensor tens_A;
+        Tensor tens_B;
+        Tensor tens_C;
+    public:
+        Log() = default;
+    };
+    // the Log() constructor is implicitly deleted because we have Tensor data
+    // members , and the tensor data members are uninitialized with no default
+    // constructor. if the Tensor class had a default constructor , then
+    // having uninitialized data members like tens_A , tens_B , tens_C , would
+    // just initialize with default constructor. this is actually a really
+    // big 'gotcha' for oop.
+
+    // COMPILER GENREATED DEFAULT CONSTRUCTOR
+    // we will now focus on compiler generated default constructors. consider
+    // the following class:
+    class SimpleClass {
+    public:
+        int value;
+        std::string name;
+    };
+    // since we defined no constructors at all , the compiler automatically
+    // generates:
+    // - default constructor
+    // - copy constructor
+    // - move constructor
+    // we have not yet learned about the copy and move constructors so don't
+    // worry if you don't know what that is yet. but we can now do this:
+    SimpleClass sc; // calls compiler generated default constructor
+    sc.value = 5;
+    sc.name = "yo";
+    return 0;
+}
+
+int trivial_constructors() {
+    // a trivial constructor is one that essentially does "nothing". it's so
+    // simple that the compiler can optimize it away or treat the object
+    // creation as just memory allocation , like when allocating space for a
+    // struct in C. note that only default constructors can be trivial. the main
+    // point of trivial constructors is that they can be optimized!
+
+    // a constructor is trivial if:
+    // - it's implicitly declared (generated by compiler) or it is explicitly
+    //   defaulted
+    // - the class has no virtual functions or virtual ancestor classes
+    // - all direct ancestor classes have trivial default constructors
+    // - all non-static data members have trivial default constructors
+    // - the class has no default member intializers
+
+    // trivial constructor examples:
+    // example 1: trivial from implicit generation
+    struct TrivialDog {
+        int age;
+        float weight;
+        // implicitly generated default constructor is trivial
+    };
+
+    // example 2: trivial with = default
+    struct TrivialDog2 {
+        int age;
+        float weight;
+        TrivialDog2() = default;  // still trivial!
+    };
+
+    // example 3: all data members have trivial default constructors
+    struct Point {
+        int x, y;
+        Point() = default;  // trivial
+    };
+    struct TrivialShape {
+        Point center;    // point has trivial constructor
+        int radius;
+        TrivialShape() = default;
+    };
+    // since Point has a trivial default constructor , so does TrivialShape
+
+    // non-trivial examples:
+    // example 1: user-provided constructor
+    struct NonTrivialDog1 {
+        int age;
+        NonTrivialDog1() {}  // user-defined => non-trivial
+    };
+
+    // example 2: default member initializer
+    struct NonTrivialDog2 {
+        int age = 0;  // default member initializer => non-trivial
+        NonTrivialDog2() = default;
+    };
+
+    // example 3: non-trivial member
+    struct NonTrivialDog3 {
+        std::string name;  // std::string has non-trivial constructor
+        NonTrivialDog3() = default;  // non-trivial due to member
+    };
+
+    // example 4: virtual functions
+    struct NonTrivialDog4 {
+        int age;
+        virtual void bark() {}  // virtual function => non-trivial
+        NonTrivialDog4() = default;
+    };
+
+    // WHY IT MATTERS
+    // performance.
+    struct Trivial {
+        int a, b, c;
+        Trivial() = default;
+    };
+
+    struct NonTrivial {
+        int a, b, c;
+        NonTrivial() {}  // user-provided
+    };
+
+    // consider creating arrays like so
+    Trivial trivial_array[1000];     // very fast - just memory allocation
+    NonTrivial nontrivial_array[1000]; // slower - calls constructor 1000 times
+
+    // memory operations are also different.
+    // with trivial types , you can use memcpy , memset safely
+    Trivial t1, t2;
+    memcpy(&t2, &t1, sizeof(Trivial));  // safe with trivial types
+
+    // with non-trivial types , you need proper copy operations
+    NonTrivial n1, n2;
+    // memcpy(&n2, &n1, sizeof(NonTrivial));  // dangerous! don't do this
+    n2 = n1;  // use proper assignment instead
+
+    // also note that many standard library algorithms optimize for trivial
+    // types:
+    std::vector<Trivial> vec1;
+    std::vector<NonTrivial> vec2;
+    // vec1.resize() can be faster because it can use memset for zero-initialization
+    // vec2.resize() must call the constructor for each element
+
+    // CHECKING TRIVIALITY
+    // you can check triviality at compile time:
+    // #include <type_traits>
+    std::cout << "TrivialDog is trivial: " << std::boolalpha <<
+        std::is_trivially_constructible_v<TrivialDog> << std::endl;
+    std::cout << "NonTrivalDog1 is trivial: " << std::boolalpha <<
+        std::is_trivially_constructible_v<NonTrivialDog1> << std::endl;
+
+    return 0;
+}
+
+int destructors() {
     return 0;
 }
 
