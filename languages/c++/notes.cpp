@@ -141,7 +141,7 @@ int variadic_templates();
 
 int main() {
     // RUN
-    destructors();
+    virtual_constructors_destructors();
     return 0;
 }
 
@@ -3668,6 +3668,107 @@ int pure_virtual_functions() {
 }
 
 int virtual_constructors_destructors() {
+    // virtual constructors don't exist in C++ , but virtual destructors are
+    // crucial for proper cleanup.
+
+    // VIRTUAL CONSTRUCTORS
+    // the reason these don't exist is because we don't need them! we choose
+    // what constructor we want to call when we write our code. we don't need
+    // virtual constructors for this because the compiler will be given the
+    // constructor call directly.
+
+    class Animal {
+    public:
+        std::string name;
+
+        Animal(std::string name) : name(name) {}
+        virtual void speak() { std::cout << "animal speaks" << std::endl; }
+        ~Animal() { std::cout << "calling animal destructor" << std::endl; }
+    };
+
+    class Cat : public Animal {
+    public:
+        size_t whiskers;
+
+        Cat(std::string name, size_t whisker_count) : Animal(name),
+            whiskers(whisker_count) {}
+        void speak() override { std::cout << "cat speaks" << std::endl; }
+        ~Cat() { std::cout << "calling cat destructor" << std::endl; }
+    };
+
+    // we just explicitly call Cat() constructor.. no need for virtual functions
+    // here , even if we are using polymorphism like Animal* pointer type.
+    Animal* cat = new Cat("miau miau", 5);
+    cat->speak(); // this needs virtual keyword to use Cat::speak
+    delete cat;
+    std::cout << std::endl;
+    // the compiler just uses the constructor we type. moreover , the
+    // constructor itself is what initializes the vtable to begin with. recall
+    // that the constructor sets the pointer to the class' vtable.
+
+    // VIRTUAL DESTRUCTORS
+    // in contrast with constructors , destructors MUST be virtual when doing
+    // polymophism. this is very important! if we have an object masked as its
+    // parent:
+    Animal* carto = new Cat("nick", 0); // a bald cat nick
+    // then it needs a virtual destructor to know which cleanup to do! it needs
+    // to look up the destructor to use in the vtable.
+    std::cout << "deleting carto..." << std::endl;
+    delete carto; // only prints "calling animal destructor"
+    std::cout << std::endl;
+
+    // it is important to note that automatically generated destructors are NOT
+    // virtual! that is , our example with Animal and Cat does not properly call
+    // the cat destructor when carto leaves the scope. so when we do delete
+    // carto , it only calls the destructor for Animal. this is very bad as any
+    // resources allocated by the cat constructor , such as size_t whiskers ,
+    // are not cleaned up. in this case , since size_t is a primitive type , it
+    // does not need any special cleanup , so we won't get a crash or a memory
+    // leak , but it's still classified as undefined behaviour. if we had
+    // complex or dynamic resources in the Cat class , then this would be much
+    // worse.
+
+    // here's how to do it properly:
+    class Vehicle {
+    public:
+        int miles;
+        std::string color;
+        Vehicle(int m, std::string color) : color(color), miles(m) {}
+        virtual ~Vehicle() {
+            std::cout << "vehicle constructor called" << std::endl;
+        }
+        // recommended to also define copy and move constructors and assignments
+    };
+
+    class Car : public Vehicle {
+    public:
+        bool winter_tires;
+        Car(bool winter, int m, std::string color) : Vehicle(m, color),
+            winter_tires(winter) {}
+        // don't need to define the destructor here , automatically generates
+        // ~Car() and inherits virtual keyword from Vehicle.
+
+        // could have had:
+        // ~Car() = default;
+
+        // or
+        // virtual ~Car() = default;
+
+        // or this:
+        virtual ~Car() {
+            std::cout << "car destructor called" << std::endl;
+        }
+        // remember , we could have just not added this.
+    };
+
+    // let's see what order the destructor is called in now.
+    Vehicle* v = new Car(false, 0, "red");
+    std::cout << "deleting v" << std::endl;
+    delete v;
+    // should print car destructor then base class desturctor. this is because
+    // child destructors are called first for cleanup then base destructrors.
+    // the reverse of constructors: the base class is called first for those.
+
     return 0;
 }
 
