@@ -1770,6 +1770,8 @@ int new_delete_operators() {
 
     // now doggy is a dangling pointer, so we should set it to nullptr:
     doggy = nullptr;
+    // also it is totally safe to call delete on nullptr types.
+    delete doggy;
 
     // NEW WITHOUT NEW
     // the other way to do it would be like this:
@@ -2826,7 +2828,106 @@ int destructors() {
     return 0;
 }
 
-    int copy_constructor() {
+int copy_constructor() {
+    // the copy constructor is a special constructor that creates a new object
+    // as a copy of an existing object. it's called automatically in several
+    // situations:
+    // - when an object is passed by value to a function
+    // - when an object is returned by value from a function
+    // - when an object is initialized with another object of the same type
+
+    // here is the basic syntax:
+    class ClassName {
+    public:
+        int x;
+        ClassName(const ClassName& other) : x(other.x) {}
+    };
+    // needs to have exact same signature.. the paramater name doesn't need to
+    // be `other` , but constructor has to have exact signature for compiler to
+    // use it for the aforementioned operations. for example , if we didn't have
+    // const , then the compiler wouldn't treat that as the copy constructor.
+
+    // AUTO GENERATION
+    // the compiler automatically generates a copy constructor if:
+    // 1. you don't define one yourself
+    // 2. the class doesn't have any user declared move constructors or move
+    //    assign operators.
+    // however , compiler generated copy constructors perform shallow copying
+    // for dynamic data like pointers:
+    // - for primitive data types , it copies the values directly (deep , no ref)
+    // - for pointer members , it copies the pointer value , not what it points
+    //   to. this creates the shallow copy problem with dynamic memory
+    // - for class members , it calls the copy constructor of the class
+
+    // SHALLOW VS DEEP COPY PROBLEM
+    // the key issue with dynamic data is the difference between shallow and
+    // deep copying:
+    // - shallow copying: copies pointer vales , so both objects point to same
+    //   memory.
+    // - deep copying: copies the actual data , creating separate memory
+    //   allocations.
+
+    // consider the following class:
+    class ComplexClass {
+    public:
+        int x;
+        int* data;
+        std::vector<int> vec;
+        ComplexClass() = default;
+
+        // copy constructor
+        ComplexClass(const ComplexClass& other) : x(other.x), vec(other.vec),
+            data(new int(*other.data)){}
+
+        ~ComplexClass() {
+            delete data;
+        }
+    };
+    // note that we manually define the copy constructor ourselves so that we
+    // can have a deep copy of int* data. we need to actually derefence the
+    // other.data value and create a new pointer.
+
+    // also note that vec(other.vec) calls the copy constructor for std::vector.
+    // this constructor ensures that a deep copy is made.
+
+    // an even safer way would have been to do a nullptr check on other.data ,
+    // as dereferencing a nullptr will cause an error:
+    class ComplexClass2 {
+    public:
+        int x;
+        int* data;
+        std::vector<int> vec;
+        ComplexClass2() = default;
+
+        // copy constructor
+        ComplexClass2(const ComplexClass2& other) : x(other.x), vec(other.vec) {
+            // have safety check with null ptb
+            if (other.data != nullptr) {
+                data = new int(*other.data);
+            } else {
+                data = nullptr;
+            }
+        }
+
+        ~ComplexClass2() {
+            delete data;
+        }
+    };
+
+    // alternatively , instead of using raw pointers , you could use smart
+    // pointers. the compiler generated copy constructor will work fine with
+    // smart pointers because their copy constructor performs a deep copy.
+
+    // if you want to explicitly disable copying for a class , use `= delete`:
+    class NonCopyable {
+    public:
+        NonCopyable(const NonCopyable&) = delete;
+
+        // copy assignment.. you will learn about this later in
+        // assignment_operators().
+        NonCopyable& operator=(const NonCopyable&) = delete;
+    };
+
     return 0;
 }
 
@@ -3763,7 +3864,7 @@ int virtual_constructors_destructors() {
 
     // let's see what order the destructor is called in now.
     Vehicle* v = new Car(false, 0, "red");
-    std::cout << "deleting v" << std::endl;
+    std::cout << "deleting v";
     delete v;
     // should print car destructor then base class desturctor. this is because
     // child destructors are called first for cleanup then base destructrors.
