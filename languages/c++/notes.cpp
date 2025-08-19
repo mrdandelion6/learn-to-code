@@ -47,6 +47,26 @@ int cmake();
 // BASIC PRINTING
 int stdin_stdout();
 int flushing_the_buffer();
+int std_format();
+
+// PRIMITIVES
+int pointer_type();
+int int_types();
+int size_t_type();
+int char_types();
+int bool_type();
+int float_types();
+int void_type();
+int nullptr_type();
+int array_types();
+int enum_types();
+int auto_type();
+int decltype_specifier();
+int typedef_using();
+int uint_types();
+int ptrdiff_t_type();
+int intptr_t_uintptr_t_types();
+int fixed_width_integer_types();
 
 // STANDARD LIBRARY
 int stl();
@@ -57,6 +77,10 @@ int string_handling();
 int iterators();
 int maps();
 int sets();
+int optional();
+int expected();
+int floats();
+int views();
 
 // LANGUAGE FEATURES
 int references();
@@ -72,8 +96,10 @@ int function_overloading();
 int exceptions();
 int exception_handling();
 int default_arguments();
-int concepts();
 int pragma();
+int modules();
+int three_way_comparison();
+int designated_initializers();
 
 // MEMORY AND RESOURCES
 int free_and_malloc_review();
@@ -83,6 +109,7 @@ int ownership();
 int raii();
 int smart_pointers();
 int move_semantics();
+int memory_allocators();
 
 // OBJECT ORIENTED PROGRAMMING
 int oop();
@@ -96,6 +123,7 @@ int trivial_constructors();
 int destructors();
 int copy_constructor();
 int move_constructor();
+int constexpr_constructor();
 int operators();
 int assignment_operators();
 int inheritance();
@@ -119,12 +147,49 @@ int noexcept_keyword();
 int const_keyword();
 int constexpr_keyword();
 int explicit_keyword();
+int consteval_keyword();
 
-// PRIMITIVES
-// TODO: add more functions for other types
-int pointer_type();
-int int_types();
-int size_t_type();
+// TEMPLATE METAPROGRAMMING & DESIGN PATTERNS
+int meta_templates();
+int perfect_forwarding();
+int variadic_templates();
+int traits_and_policies();
+int CRTP();
+int SFINAE();
+int template_specialization();
+int type_traits();
+int tag_dispatching();
+int expression_templates();
+int mixins();
+int policy_based_design();
+int template_template_parameters();
+
+// COMPILE-TIME PROGRAMMING
+int concepts();
+int constexpr_keyword();
+int consteval_keyword();
+int runtime_vs_compile_time_conditions();
+int compile_time_computations();
+int template_metafunctions();
+int constexpr_vs_consteval();
+int if_constexpr();
+int requires_expressions();
+int constinit_keyword();
+int immediate_functions();
+int compile_time_reflection();
+
+// COMPILER OPTIMIZATIONS
+int return_value_optimization();
+int copy_elision(); 
+int small_string_optimization();
+int empty_base_optimization();
+int inline_expansion();
+int dead_code_elimination();
+int loop_optimizations();
+int devirtualization();
+int link_time_optimization();
+int optimization_levels();
+int when_optimizations_fail();
 
 // STREAM I/O
 int stream_io();
@@ -133,15 +198,20 @@ int stream_objects();
 int file_streams();
 int string_streams();
 
-// ADVANCED TOPICS
+// CONCURRENCY & PARALLELISM
 int multithreading();
-int perfect_forwarding();
-int variadic_templates();
+int atomics();
+int thread_safety();
+int coroutines();
 
+// EXTERNAL LIBRARIES
+int TDD_scalable_allocator();
+int simdjson();
+int fast_cpp_csv_parser();
 
 int main() {
     // RUN
-    virtual_constructors_destructors();
+    lvalues_rvalues();
     return 0;
 }
 
@@ -1625,7 +1695,7 @@ int aggregates() {
         // 4. no default member initializers
 
     // don't worry if you don't know about virtual functions and default member
-    // initializers. we will cover these topics later. if you don't know about
+    // initializers. i will cover these topics later. if you don't know about
     // constructors or access specifiers (private, protected, public), then you
     // can see the respective functions: constructors() and classes().
 
@@ -1703,7 +1773,7 @@ int aggregates() {
     // this code works.. but it's not aggregate initialization!
     Knight kit = {69, 69, 69};
     // even though it is identical to aggregate initialization, 
-    // it's actually calling the constructor we defined with the brace-init-list being used as a list of args.
+    // it's actually calling the constructor i defined with the brace-init-list being used as a list of args.
     // this feature is part of C++'s uniform initialization syntax (aka brace initialization) 
 
     // so you might ask, "if they look the same, what's the difference?"
@@ -1769,9 +1839,9 @@ int deleted_functions() {
 
     // you might wonder what the point of this is. this can be useful from
     // preventing unwanted conversions. see the function set_volume(int level)
-    // defined above. see that we delete set_volume with float and double args.
+    // defined above. see that i delete set_volume with float and double args.
 
-    // this means we can call:o
+    // this means we can call:
     set_volume(3);
 
     // but not
@@ -1830,7 +1900,7 @@ int free_and_malloc_review() {
     free(ptr1);
 
     // but lets review how the program knows how much to free.
-    // when we first do malloc(sizeof(int)) , the runtime system tracks
+    // when i first do malloc(sizeof(int)) , the runtime system tracks
     // allocation sizes. when we call free() , the runtime system is looked
     // up to determine how much to free.
 
@@ -1915,7 +1985,7 @@ int new_delete_operators() {
     // sizof(Dog) bytes... note the sizeof() operator accounts for padding.
     // after allocation , compiler also calls the constructor.
 
-    // if we didnt use new, it would just allocate the memory on the stack:
+    // if i didnt use new, it would just allocate the memory on the stack:
     Dog doggy2 = Dog("saadu", 200);
     // this object only lives on the stack frame and not the heap
 
@@ -3093,6 +3163,10 @@ int copy_constructor() {
 }
 
 int move_constructor() {
+    return 0;
+}
+
+int rule_of_three_five() {
     return 0;
 }
 
