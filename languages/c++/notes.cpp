@@ -117,7 +117,7 @@ int inline_keyword();
 int static_keyword();
 int noexcept_keyword();
 int const_keyword();
-int const_expr_keyword();
+int constexpr_keyword();
 int explicit_keyword();
 
 // PRIMITIVES
@@ -1441,6 +1441,8 @@ int iterators() {
     // calls a constructor instead of simply = i. this is very bad as we will
     // be calling a constructor every iteration.. much slower.
 
+    // TODO: finish iterator notes
+
     // REVERSE ITERATORS
 
     // CONST ITERATORS
@@ -1448,6 +1450,165 @@ int iterators() {
     // STL ALGORITHM WITH ITERATORS
 
     // CUSTOM ITERATORS
+
+    return 0;
+}
+
+int lvalues_rvalues() {
+    // lvalue stands for left-hand value , and rvalue stands for right-hand
+    // value.
+
+    // LVALUES
+    // an lvalue is an expression that refers to a memory location and persists
+    // beyond a single expression. you can take its address with &. lvalues
+    // can appear on the left side of an assignment operation if they are not
+    // const. some examples of stuff that can be an lvalue:
+    // - variables
+    // - array elements
+    // - dereferenced pointer
+    // - data members
+
+    // to clarify , consider the following:
+    int x = 5; // x is an lvalue
+    int y = x; // x is still an lvalue here! so is y.
+    // x will always be an lvalue because it has a memory address &x , and it
+    // persists.
+
+    // when we do:
+    int z = x;
+    // the compiler performs an explicit lvalue to rvalue conversion. the value
+    // stored in x (which is 5) is evaluated/read and used as an rvalue. then
+    // the rvalue 5 is used to initialize y. then y also becomes an lvalue.
+
+    // so think of it this way:
+    int a = 5;     // a is lvalue
+    int b = a;     // a is lvalue, but its VALUE (5) is used as rvalue
+    a = 10;        // a is lvalue (can be assigned to)
+
+    // RVALUES
+    // an rvalue is a temporary value that doesn't persist beyond the expression
+    // that uses it. you cannot take its address. rvalues are:
+    // - literals
+    // - temporary objects
+    // - results of evaluating expressions
+
+    // for example , in our analysis above , we said that a is an lvalue but
+    // when we do b = a , the value of a is the rvalue. this is because the
+    // expression which is `a` gets evaluated.
+
+    // here is an even better example of an rvalue
+    b = a + z;
+    // the rvalue here is the result of a + z , whichi is:
+    std::cout << "a + z: " << a + z << std::endl;
+    // this is a temporary value which is yielded from evaluating the expression
+    // a + z , and it has no memory location. you cannot find a + z in memory.
+    // once it is assigned to be , then b is an lvalue with a value of a + z.
+
+    // RVALUE REFERENCE &&
+    // what if we could refer to these temporary values ? this is called an
+    // rvalue reference.
+    int&& rref = x + 5;
+
+    // an lvalue reference is simply the regular references we are already
+    // familiar with. you can read about them in references(). but with lvalue
+    // references , you cannot do something like:
+    // int& ref = x + 5;
+    // uncommenting the above yields an error. this is because x + 5 is a 
+    // temporary value , it is an r-value. value of x + 5 doesn't exist in a
+    // persistent place in memory: it is just evaluated and then copied into a
+    // variable by assignment , or discarded right away--except if we capture a
+    // reference to this r value. when we capture an rvalue reference , it
+    // extends the temporary value's life until our rvalue reference leaves the
+    // scope.
+
+    // so lvalues references are references to onlylvalues , like variables. and
+    // rvalue references are also just references , except only to rvalues.
+
+    // but how does making a right value reference differ from doing:
+    int temp = x + 5;
+    // what's the actual difference under the hood ?
+
+    // the difference is that for temp , we:
+    // 1. evaluate the temporary value x + 5
+    // 2. this temporily stores x + 5 on the stack
+    // 3. copy this temporarly value into a new memory location that &temp
+    //    points to
+    // 4. delete the original temporary value
+
+    // and for rref:
+    // 1. evaluate the temporary value x + 5
+    // 2. this temporily stores x + 5 on the stack
+    // 3. point rref exactly to this temporary value , no new copy of the temp
+    //    is made and the temporary value is not deleted.
+
+    // but why does this matter ? the first thing to note is that temp = x + 5
+    // briefly uses double the memory , one when it's first temporarily made ,
+    // and then when we copy it over into temp. then the temporary location is
+    // deleted and we only use the memory at &temp. the second thing to note is
+    // that copying can be expensive. we had to copy from the temporary location
+    // to &temp.
+
+    // well for something as simple as x + 5 , it won't make any difference ,
+    // but what if you had a very large object being created ? for example ,
+    // consider the following lambda:
+    auto expensive_object = [](){
+        return std::vector<int>(100000, 42); // long vector
+    };
+
+    // when we do this:
+    std::vector<int> vec = expensive_object();
+    // the following happens:
+    // 1. the function is called and a temporary value for the vector is made on
+    //    the caller's (this function's) stack frame.
+    // 2. it copies the temporary value into the variable vec.
+    // 3. deletes the temporary value on the stack
+
+    // quick aside , if you are interested on how the value is returned from the
+    // function to the caller , check out return_value_optimization().
+
+    // another thing to note is that functions return rvalues , they are not
+    // a persistent variable value , just a return value from a function. vec
+    // ends up taking the rvalue returned by expensive_object() , and then
+    // becomes an lvalue itself. but the immediate function call itself returns
+    // an rvalue. this is an important thing to understand because as mentioned
+    // before , we cannot assign an lvalue reference to an rvalue. so we could
+    // not do this:
+    // std::vector<int>& vec_ref = expensive_object();
+
+    // if we do this instead:
+    std::vector<int>&& vec2 = expensive_object();
+    // instead of copying over our temporary value into a new variable location ,
+    // we just use the temporary location by keeping a reference to it.
+
+    // we can even time this to measure the difference:
+    std::vector<int> v1;
+    auto start = std::chrono::high_resolution_clock::now();
+    v1 = expensive_object();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time1 = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // an important note here is that we defined v1 already , then assigned it
+    // the value afterwards on purpose. if we had done:
+    // std::vector<int> v1 = expensive_object();
+    // then the compiler is smart and would have used RVO and built the return
+    // value directly within the v1 variable instead of copying it over , and
+    // it would have taken the same time as the rvalue reference. to learn more
+    // about RVO and how it works , read return_value_optimization()
+
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<int>&& v2 = expensive_object();
+    end = std::chrono::high_resolution_clock::now();
+    auto time2 = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    // time1 should take about roughly 2x more than time2
+    std::cout << "time1 (lvalue assignment): " << time1.count() << " microseconds\n";
+    std::cout << "time2: (rvalue reference): " << time2.count() << " microseconds\n";
+
+    // RVALUE REFENCES FOR MOVE
+    // a big usage of rvalue references is for move constructors and move
+    // assignments. i won't get into it right too much right now , you will have
+    // to see move_constructor() and assignment_operators(). but note that both
+    // move assignments and constructors use rvalue references for their
+    // signature.
 
     return 0;
 }
