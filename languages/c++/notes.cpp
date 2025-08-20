@@ -100,6 +100,7 @@ int pragma();
 int modules();
 int three_way_comparison();
 int designated_initializers();
+int uniform_initialization();
 
 // MEMORY AND RESOURCES
 int free_and_malloc_review();
@@ -117,6 +118,7 @@ int oop();
 int classes();
 int access_specifiers();
 int structs();
+int inheritance();
 int initializer_lists();
 int constructors();
 int default_constructors();
@@ -126,8 +128,8 @@ int copy_constructor();
 int move_constructor();
 int constexpr_constructor();
 int operators();
+int operator_overloading();
 int assignment_operators();
-int inheritance();
 int polymorphism();
 int virtual_functions();
 int vtables();
@@ -136,8 +138,6 @@ int diamond_problem();
 int pure_virtual_functions();
 int virtual_constructors_destructors();
 int templates();
-int operator_overloading();
-int uniform_initialization();
 
 // KEYWORDS
 int auto_keyword();
@@ -2391,9 +2391,108 @@ int structs() {
     };
 
     // structs can always mimic classes, but classes cannot always mimic structs.
-
     return 0;
 }
+
+int inheritance() {
+    // inheritance is something you may be familiar with if you have done OOP
+    // before in a language like python on java. inheritance allows you to
+    // create new classes based on existing classes.
+
+    // we call the new classes "derived classes" , and the existing classes
+    // "base classes". like child and parent. the derived classes inherit all
+    // of the properties and methods from the base classes and they can also
+    // modify existing ones or add new ones.
+
+    // consider the following base class
+    class Base {
+    public:
+        int pub_var = 1;
+    protected:
+        int prot_var = 2;
+    private:
+        int priv_var = 3;
+
+    public:
+        void show_base() {
+            std::cout << "base - public: " << pub_var
+            << ", protected: " << prot_var
+            << ", private: " << priv_var
+            << std::endl;
+        }
+    };
+
+    // there are three ways we can inherit from this class:
+    // 1. public inheritance
+    // 2. protected inheritance
+    // 3. private inheritance
+
+    // PUBLIC INHERITANCE:
+    // when deriving a class , you can put an access modifier in front of the
+    // base class like so:
+    class PublicDerived : public Base {
+    public:
+        void access_members() {
+            std::cout << "PublicDerived accessing: "
+                << "pub_var: " << pub_var
+                << ", prot_var: " << prot_var
+                << ", priv_var: cant access"
+                << std::endl;
+        }
+    };
+
+    // this makes the derived class inherit the properties of the base class
+    // in this manner:
+    // public -> pulbic , protected -> protected , private -> inaccesible
+    // if we tried to access priv_var , we would get an error.
+
+    // recall that private members are not accessible to derived classes , only
+    // protected and public members are. the same goes for protected and
+    // private inheritance as well , except those ones will change the access
+    // for the inherited properties in the derived class. it's best to just see
+    // some examples.
+
+    // PROTECTED INHERITANCE:
+    class ProtectedDerived : protected Base {
+    public:
+        void access_members() {
+            std::cout << "PublicDerived accessing: "
+                << "pub_var: " << pub_var
+                << ", prot_var: " << prot_var
+                << ", priv_var: cant access"
+                << std::endl;
+        }
+    };
+    // public -> protected , protected -> protected , private -> inaccesible
+
+    // this time the inherited public properties become of protected access.
+    // it allows us to quickly convert any inherited properties to protected
+    // access.
+
+    // PRIVATE INHERITANCE:
+    class PrivateDerived : private Base {
+    public:
+        void access_members() {
+            std::cout << "PublicDerived accessing: "
+                << "pub_var: " << pub_var
+                << ", prot_var: " << prot_var
+                << ", priv_var: cant access"
+                << std::endl;
+        }
+    };
+    // public -> private , protected -> private , private -> inaccesible
+
+    // and lastly , the rarest inheritance: private inheritance. this converts
+    // all the inherited properties to private access. recall we don't inherit
+    // properties that were private in the base class. so other than those ,
+    // both the public and protected variables of the base class get inherited
+    // and set to private in the derived class.
+
+    // this inheritance is used for an "implemented-in-terms-of" relationship.
+    return 0;
+}
+
+
 
 int initializer_lists() {
     // before we get into the different kinds of constructors and destructors, we will go over some unique C++ syntax for initializing class members.
@@ -3283,6 +3382,18 @@ int copy_constructor() {
 }
 
 int move_constructor() {
+    // move constructors in C++ are like copy constructors but they transfer the
+    // ownership from a previous object to the new one being instantiated.
+    // transferring owneship entails transferring the ownership of the resources
+    // such as:
+    // - dynamically allocated memory
+    // - file handles
+    // - network connections
+    // - data members in general
+
+    // instead of making expensive copies , move constructors allow the new
+    // object to steal the resources. this leaves the source object in a valid
+    // but empty state.
     return 0;
 }
 
@@ -3338,104 +3449,6 @@ int lambda_functions() {
 
 int static_keyword() {
 
-    return 0;
-}
-
-int inheritance() {
-    // inheritance is something you may be familiar with if you have done OOP
-    // before in a language like python on java. inheritance allows you to
-    // create new classes based on existing classes.
-
-    // we call the new classes "derived classes" , and the existing classes
-    // "base classes". like child and parent. the derived classes inherit all
-    // of the properties and methods from the base classes and they can also
-    // modify existing ones or add new ones.
-
-    // consider the following base class
-    class Base {
-    public:
-        int pub_var = 1;
-    protected:
-        int prot_var = 2;
-    private:
-        int priv_var = 3;
-
-    public:
-        void show_base() {
-            std::cout << "base - public: " << pub_var
-            << ", protected: " << prot_var
-            << ", private: " << priv_var
-            << std::endl;
-        }
-    };
-
-    // there are three ways we can inherit from this class:
-    // 1. public inheritance
-    // 2. protected inheritance
-    // 3. private inheritance
-
-    // PUBLIC INHERITANCE:
-    // when deriving a class , you can put an access modifier in front of the
-    // base class like so:
-    class PublicDerived : public Base {
-    public:
-        void access_members() {
-            std::cout << "PublicDerived accessing: "
-                << "pub_var: " << pub_var
-                << ", prot_var: " << prot_var
-                << ", priv_var: cant access"
-                << std::endl;
-        }
-    };
-
-    // this makes the derived class inherit the properties of the base class
-    // in this manner:
-    // public -> pulbic , protected -> protected , private -> inaccesible
-    // if we tried to access priv_var , we would get an error.
-
-    // recall that private members are not accessible to derived classes , only
-    // protected and public members are. the same goes for protected and
-    // private inheritance as well , except those ones will change the access
-    // for the inherited properties in the derived class. it's best to just see
-    // some examples.
-
-    // PROTECTED INHERITANCE:
-    class ProtectedDerived : protected Base {
-    public:
-        void access_members() {
-            std::cout << "PublicDerived accessing: "
-                << "pub_var: " << pub_var
-                << ", prot_var: " << prot_var
-                << ", priv_var: cant access"
-                << std::endl;
-        }
-    };
-    // public -> protected , protected -> protected , private -> inaccesible
-
-    // this time the inherited public properties become of protected access.
-    // it allows us to quickly convert any inherited properties to protected
-    // access.
-
-    // PRIVATE INHERITANCE:
-    class PrivateDerived : private Base {
-    public:
-        void access_members() {
-            std::cout << "PublicDerived accessing: "
-                << "pub_var: " << pub_var
-                << ", prot_var: " << prot_var
-                << ", priv_var: cant access"
-                << std::endl;
-        }
-    };
-    // public -> private , protected -> private , private -> inaccesible
-
-    // and lastly , the rarest inheritance: private inheritance. this converts
-    // all the inherited properties to private access. recall we don't inherit
-    // properties that were private in the base class. so other than those ,
-    // both the public and protected variables of the base class get inherited
-    // and set to private in the derived class.
-
-    // this inheritance is used for an "implemented-in-terms-of" relationship.
     return 0;
 }
 
