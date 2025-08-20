@@ -110,6 +110,7 @@ int raii();
 int smart_pointers();
 int move_semantics();
 int memory_allocators();
+int global_data();
 
 // OBJECT ORIENTED PROGRAMMING
 int oop();
@@ -1557,7 +1558,8 @@ int lvalues_rvalues() {
 
     // RVALUES
     // an rvalue is a temporary value that doesn't persist beyond the expression
-    // that uses it. you cannot take its address. rvalues are:
+    // that uses it. you cannot take its address. we also call rvalues as
+    // "temporaries". rvalues are:
     // - literals
     // - temporary objects
     // - results of evaluating expressions
@@ -1574,15 +1576,72 @@ int lvalues_rvalues() {
     // a + z , and it has no memory location. you cannot find a + z in memory.
     // once it is assigned to be , then b is an lvalue with a value of a + z.
 
-    // RVALUE REFERENCE &&
+    // WHY EVEN HAVE TEMPORARIES ?
+    // a big question you might have at this point is why even have rvalues ?
+    // why not just build everything directly into the lvalues.. and have no
+    // temporaries being made. well actually , return value optimzation does
+    // exactly this , as we mentioned above.
+    //
+    // however , that doesn't address the question of why we have temporaries
+    // at all. the reason we need rvalues is because of EVALUATION. we need to
+    // evaluate expression on the right hand side of an assignment before we
+    // do the assignment.
+
+    // for something like
+    int r = 15;
+    int s;
+    s = r;
+    // it may seem silly or pointless to "evaluate" r as a temporary then copy
+    // it over to s. but what if we had more stuff:
+    s = r + x;
+    // now it is apparent that we first have to evaluate `r + x` , then move
+    // that value into s. but why don't we evaluate it in place of s , so that
+    // we don't waste memory for a temporary ? this is because expressions can
+    // fail!
+
+    // suppose we had some valuable information in variable x , and then assign
+    // something new to it from a function or something else. it would be risky
+    // to build it directly into x because if the expression fails , x is left
+    // in a corrupted / partial state. you cannot safely write directly to the
+    // destination until you know the expression has succeeded--hence ,  we need
+    // a temporary.
+
+    // this is precisely why we have RVO only for initialization , there won't
+    // be any data that gets overriden if it's a new variable we are
+    // initializing. so we can just do RVO and build directly into the variable
+    // address.
+
+    // another consideration for why we have temporaries is CPU architecture
+    // constraints. for things like integers , we would do arithmetic in the
+    // registers before writing to the variable.
+
+    z = x + y;
+    // first load x into R1
+    // second load y into R2
+    // add R1 and R2 , result goes into R3
+    // store R3 into memory address of z
+
+    // then R3 is like our temporary value in this case. if you are not familiar
+    // with assembly , i suggest you read my x86 notes in languages/x86.
+
+    return 0;
+}
+
+int rvalue_references() {
     // what if we could refer to these temporary values ? this is called an
     // rvalue reference.
+    int x = 69;
     int&& rref = x + 5;
+    // note the && syntax.
 
     // an lvalue reference is simply the regular references we are already
-    // familiar with. you can read about them in references(). but with lvalue
-    // references , you cannot do something like:
+    // familiar with:
+    int& lvalue_ref = x;
+
+    // you can read about them in references(). but with lvalue references , you
+    // cannot do something like:
     // int& ref = x + 5;
+
     // uncommenting the above yields an error. this is because x + 5 is a 
     // temporary value , it is an r-value. value of x + 5 doesn't exist in a
     // persistent place in memory: it is just evaluated and then copied into a
@@ -1607,7 +1666,7 @@ int lvalues_rvalues() {
 
     // and for rref:
     // 1. evaluate the temporary value x + 5
-    // 2. this temporily stores x + 5 on the stack
+    // 2. this temporarily stores x + 5 on the stack
     // 3. point rref exactly to this temporary value , no new copy of the temp
     //    is made and the temporary value is not deleted.
 
@@ -1627,7 +1686,7 @@ int lvalues_rvalues() {
 
     // when we do this:
     std::vector<int> vec = expensive_object();
-    // the following happens:
+    // the following happens (omitting compiler optimizations):
     // 1. the function is called and a temporary value for the vector is made on
     //    the caller's (this function's) stack frame.
     // 2. it copies the temporary value into the variable vec.
@@ -1673,12 +1732,73 @@ int lvalues_rvalues() {
     std::cout << "time1 (lvalue assignment): " << time1.count() << " microseconds\n";
     std::cout << "time2: (rvalue reference): " << time2.count() << " microseconds\n";
 
-    // RVALUE REFENCES FOR MOVE
+    // MODIFYING RVALUE REFS
+    // it's important to understand that temporaries are not global data. they
+    // are just momentary objects that arise from evaluations and will be
+    // deleted off the stack. if you make a ref to an rvalue and modify it ,
+    // that is valid.
+    int&& rref2 = 69;
+    rref2++;
+    std::cout << "rref2: " << rref2 << std::endl;
+    // do not confuse temporaries with global data! to learn about global data ,
+    // see global_data()
+
+    // RVALUE REFERENCES FOR MOVE
     // a big usage of rvalue references is for move constructors and move
     // assignments. i won't get into it right too much right now , you will have
     // to see move_constructor() and assignment_operators(). but note that both
     // move assignments and constructors use rvalue references for their
     // signature.
+
+    // CONST LVALUE REFERENCE
+    // lvalue references with the const keyword can bind to rvalues. this is
+    // because of historical reasons and also to reduce function overloading.
+    // before rvalue refs which were introduced in C++11 (2011) , the only way
+    // to bind to temps was using const lvalue references since 1980s/1990s:
+    class Processor {
+    public:
+        int x;
+        void process(const std::string& str) {
+            std::cout << "processing: " << str << std::endl;
+        }
+    };
+    Processor p;
+    p.process("what's up dog"); // can process temporaries like string literals
+
+    std::string s1 = "not much gang";
+    p.process(s1); // can process lvalues as well
+
+    // a lot of existing code relies on using const lvalue references for
+    // binding to rvalues. later on rvalue references were also added , but
+    // preventing const lvalue references from binding now would break a lot of
+    // existing code.
+
+    // and aside from that , it allows you to need less function overloading.
+    // you can handle both rvalues and const lvalues in one function.
+
+    // what about overloading priorities ? will a function process("literal")
+    // call the const lvalue ref or the rvalue ref ?
+    class Processor2 {
+    public:
+        void process(const std::string& str) {
+            std::cout << "const lvalue processing: " << str << std::endl;
+        }
+        void process(std::string&& str) {
+            std::cout << "rvalue processing: " << str << std::endl;
+        }
+        void process(std::string& str) {
+            std::cout << "lvalue processing: " << str << std::endl;
+        }
+    };
+    Processor2 p2;
+    p2.process("yo whatttttttt"); // will take the rvalue reference
+    p2.process(s1); // will use non const lvalue reference
+
+    const std::string s2 = "jajajaj";
+    p2.process(s2); // will use const lvalue ref
+    // as expected , the member function with the exact signature matching the
+    // argument will be called.
+
 
     return 0;
 }
