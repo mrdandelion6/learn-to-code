@@ -3230,51 +3230,15 @@ int destructors() {
     // - copy constructor (still generated - but deprecated in C++11+)
     // - copy assignment (still generated - but deprecated in C++11+)
 
-    // this is very important. it is why C++ developers use this term called the
-    // RULE OF THREE/FIVE. the rule of 3/5 means that if you define one of these:
-    // - destructor
-    // - copy constructor
-    // - copy assignment operator
-    // then you should define all 3 (rule of three). the rule of five extends this
-    // to include move operations:
-    // - move constructor
-    // - move assignment operator
+    // this is very important. it is one of the reasons why C++ developers use
+    // this term called the RULE OF THREE/FIVE. to learn about the rule of 3/5
+    // you can read here: rule_of_three_five().
 
-    // the rule is a GUIDELINE for good design, not a compiler restriction.
-    // the compiler may still auto-generate some operations, but they might be
-    // wrong (especially with raw pointers), so you should define them yourself.
-
-    // here is an example
-    class DangerClass {
-    public:
-        int x;
-        DangerClass(int x) : x(x) {}
-        ~DangerClass() = default; // prevents move constructor
-    };
-
-    DangerClass obj1(5);
-    DangerClass obj2 = std::move(obj1);
-    // this works and compiles fine but it doesn't actually use the move
-    // constructor. it tries to but can't find it so falls back to the copy
-    // constructor. we can see this even more explicltly:
-    class NoMove {
-    public:
-        int x;
-        NoMove(int x) : x(x) {}
-        NoMove(const NoMove& other) : x(other.x) { // copy constructor
-            std::cout << "copy constructor called" << std::endl;
-        }
-        ~NoMove() = default; // prevents move constructor from being generated
-    };
-    NoMove nm1(5);
-    NoMove nm2 = std::move(nm1); // will print `copy constructor called`
-
-    // we will revisit the rule of three/five later on after learning about copy
-    // and move constructors. and as for destructors with inheritance .. this is
-    // something that requires understanding the use of virtual functions. for
-    // that reason , we will postpone learning how to use destructors with
-    // inheritance until after we have learned about virtual functions and
-    // vtables. see virtual_constructors_destructors() when you are ready.
+    // for destructors with inheritance .. this is something that requires
+    // understanding the use of virtual functions. for that reason , we will
+    // postpone learning how to use destructors with inheritance until after we
+    // have learned about virtual functions and vtables. see
+    // virtual_constructors_destructors() when you are ready.
 
     return 0;
 }
@@ -3605,6 +3569,142 @@ int move_constructor() {
 }
 
 int rule_of_three_five() {
+    // RULE OF THREE
+    // the rule of three states that if you define any one or more of the
+    // following:
+    // - destructor
+    // - copy constructor
+    // - copy assignment operator
+    // then you should define all 3.
+
+    // the rule of five extends this and says if you define any of the previous
+    // plus the following two:
+    // - move constructor
+    // - move assignment operator
+    // consider definiing all 5.
+
+    // the rule is a GUIDELINE for good design, not a compiler restriction.
+    // the compiler may still auto-generate some operations, but they might be
+    // wrong (especially with raw pointers), so you should define them yourself.
+
+    // here is an example
+    class DangerClass {
+    public:
+        int x;
+        DangerClass(int x) : x(x) {}
+        ~DangerClass() = default; // prevents move constructor
+    };
+
+    DangerClass obj1(5);
+    DangerClass obj2 = std::move(obj1);
+    // this works and compiles fine but it doesn't actually use the move
+    // constructor. it tries to but can't find it so falls back to the copy
+    // constructor. we can see this even more explicltly:
+    class NoMove {
+    public:
+        int x;
+        NoMove(int x) : x(x) {}
+        NoMove(const NoMove& other) : x(other.x) { // copy constructor
+            std::cout << "copy constructor called" << std::endl;
+        }
+        ~NoMove() = default; // prevents move constructor from being generated
+    };
+    NoMove nm1(5);
+    NoMove nm2 = std::move(nm1); // will print `copy constructor called`
+
+    // a reason for the rule of three/five is because of dynamic data members.
+    // if we needed to define a delete constructor for dynamic data , then
+    // our copy constructors would need to also properly copy that data. we
+    // would need to explicitly define that , as the compiler would not properly
+    // generate that.
+
+    // WHAT PREVENTS WHAT
+    // defining X might prevent Y from being auto generated , where X and Y are
+    // one of {destructor , move constructor , move assignment ,
+    // copy constructor , copy assignment}. this relationship is a bit naunced.
+    /**
+    ┌─────────────────┬──────────┬──────────┬──────────┬──────────┬───────────┐
+    │ You Declare     │ Copy     │ Copy     │ Move     │ Move     │ Destructor│
+    │                 │ Ctor     │ Assign   │ Ctor     │ Assign   │           │
+    ├─────────────────┼──────────┼──────────┼──────────┼──────────┼───────────┤
+    │ Copy Ctor       │    ●     │    ✓     │    ✗     │    ✗     │     ✓     │
+    │ Copy Assign     │    ✓     │    ●     │    ✗     │    ✗     │     ✓     │
+    │ Move Ctor       │    ✗     │    ✗     │    ●     │    ✓     │     ✓     │
+    │ Move Assign     │    ✗     │    ✗     │    ✓     │    ●     │     ✓     │
+    │ Destructor      │   ✓ D    │   ✓ D    │    ✗     │    ✗     │     ●     │
+    └─────────────────┴──────────┴──────────┴──────────┴──────────┴───────────┘
+    Legend: ✓ = Generated    ✗ = NOT Generated    ● = Your Declaration
+           D = Deprecated (C++11), Removed (C++17)
+    */
+    // note that destructor generation is independent of the other 4. move cotr
+    // / ass will not be generated if destructor or copy cotr / ass is explicit.
+    // copy cotr / ass will not be generated if move cotr / ass are explicit ,
+    // but before C++17 , they will still generate even if destructor is
+    // explicit. for C++17+ , copy ass / cotr will not be generated if the
+    // destructor is explicit.
+
+    // VIRTUAL DESTRUCTORS
+    // a messy situation arises when we perform inheritance with classes. we are
+    // forced to explicitly define our destructors in the base class with the
+    // virtual keyword. the reason why is explained in
+    // virtual_constructors_destructors(). but anyhow , this forces us to define
+    // an explicit destructor , which then prevents the move cotr / ass and
+    // possibly the copy cotr / ass from being generated.
+
+    // here is an example class
+    class Base {
+    public:
+        virtual ~Base() = default;
+        // no move operations declared
+        // copy operations still generated (but deprecated) for c++11
+
+        // if you want to be explicit:
+        // Base(const Base&) = default;
+        // Base& operator=(const Base&) = default;
+        // Base(Base&&) = delete;
+        // Base& operator=(Base&&) = delete;
+    };
+
+    class Derived : public Base {
+    public:
+        // same story - no move operations
+    };
+    // this can be an issue if we want to also have move and copy operations on
+    // our classes. to get around this , you can just default generate them:
+    class Base2 {
+    public:
+        virtual ~Base2() = default;
+
+        // copy operations
+        Base2(const Base2&) = default;
+        Base2& operator=(const Base2&) = default;
+
+        // move operations
+        Base2(Base2&&) = default;
+        Base2& operator=(Base2&&) = default;
+    };
+
+    class Derived2 : public Base2 {
+    public:
+        // copy ops
+        Derived2(const Derived2&) = default;
+        Derived2& operator=(const Derived2&) = default;
+
+        // move ops
+        Derived2(Derived2&&) = default;
+        Derived2& operator=(Derived2&&) = default;
+    };
+
+    // if you are wondering about using virtual move / copy operations , then
+    // good for you. you are actually thinking and not mindlessly reading these
+    // notes. to answer your concerns , it is usually in best practices to not
+    // virtualize these functions. they are typically used as operations between
+    // objects of the same class , and are not meant to be used under a
+    // polymorphic interface. polymorphism is usually done through pointers. so
+    // if we had a Base pointer that was constructed with Derived() , and we
+    // wanted to do a move , then we would just change the ownership of the
+    // pointer. see smart_pointers() to learn about moving ownership for
+    // unique_ptr types.
     return 0;
 }
 
@@ -3833,7 +3933,8 @@ int smart_pointers() {
     // can't have another ptr point to the same thing.
     // std::unique_ptr<int> uptr2 = uptr;
     // the above won't work and give compile errors if you uncomment it and try
-    // to compile.
+    // to compile. this is because the copy constructor and assignment are
+    // deleted for the unique_ptr class.
 
     // you can however transfer ownership with std::move
     std::unique_ptr<int> uptr2 = std::move(uptr);
