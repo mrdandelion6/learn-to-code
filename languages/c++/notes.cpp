@@ -3379,6 +3379,72 @@ int copy_constructor() {
         NonCopyable& operator=(const NonCopyable&) = delete;
     };
 
+    // INHERITANCE
+    // all auto generated copy constructors for derived classes will
+    // automamtically call their base class' constructor first. here is an
+    // example:
+    class Base {
+    public:
+        Base() { std::cout << "Base default ctor\n"; }
+        Base(const Base&) { std::cout << "Base copy ctor\n"; }
+    };
+    class Derived : public Base {
+    public:
+        Derived() { std::cout << "Derived default ctor\n"; }
+        // copy constructor automatically calls base copy constructor first
+        Derived(const Derived&) = default;
+    };
+
+    Derived d;
+    std::cout << "creating Derived class..." << std::endl;
+    Derived c = d;
+    std::cout << std::endl;
+
+    // for user defined copy constructors , the derived class' copy constructor
+    // automatically calls the base class' DEFAULT constructor , unless we make
+    // an explicit call to the base class' copy constructor in the derived copy
+    // consructor.
+
+    // here is an example that shows the base class' default constructor being
+    // automatically called instead:
+    class Base2 {
+    public:
+        Base2() { std::cout << "Base2 default ctor\n"; }
+        Base2(const Base2&) { std::cout << "Base2 copy ctor\n"; }
+    };
+    class Derived2 : public Base2 {
+    public:
+        Derived2() { std::cout << "Derived2 default ctor\n"; }
+        // copy constructor automatically calls base DEFAULT constructor first
+        Derived2(const Derived2& other) { std::cout << "Derived2 copy ctor\n"; }
+    };
+
+    Derived2 d2;
+    std::cout << "creating Derived2 class..." << std::endl;
+    Derived2 c2 = d2;
+    // will print "Base2 default ctor" before "Derived2 copy ctor".
+    std::cout << std::endl;
+
+    // here's the fix:
+    class Base3 {
+    public:
+        Base3() { std::cout << "Base3 default ctor\n"; }
+        Base3(const Base3&) { std::cout << "Base3 copy ctor\n"; }
+    };
+    class Derived3 : public Base3 {
+    public:
+        Derived3() { std::cout << "Derived3 default ctor\n"; }
+
+        // make explicit call
+        Derived3(const Derived3& other) : Base3(other) {
+            std::cout << "Derived3 copy ctor\n";
+        }
+    };
+
+    Derived3 d3;
+    std::cout << "creating Derived3 class..." << std::endl;
+    Derived3 c3 = d3;
+
     return 0;
 }
 
@@ -3528,6 +3594,12 @@ int move_constructor() {
     // temporary. we can use std::move to do this:
     std::cout << "using std::move" << std::endl;
     CoolClass c = std::move(a);
+
+    // INHERITANCE
+    // just like with copy constructors , compiler generated move constructors
+    // will automatically call their base class' move constructor first. for
+    // user defined move constructors , you need to explicitly call the parent
+    // move constructor or else it will call the default parent constructor.
 
     return 0;
 }
