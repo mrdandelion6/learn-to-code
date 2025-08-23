@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <type_traits>
 #include <ios>
@@ -212,7 +213,7 @@ int fast_cpp_csv_parser();
 
 int main() {
     // RUN
-    lvalues_rvalues();
+    move_constructor();
     return 0;
 }
 
@@ -3394,6 +3395,140 @@ int move_constructor() {
     // instead of making expensive copies , move constructors allow the new
     // object to steal the resources. this leaves the source object in a valid
     // but empty state.
+
+    // move constructors are invoked when:
+    // - returning objects from functions
+    // - passing temporary objects to functions
+    // - using std::move() explicitly
+    // - container operations like vector::push_back with temporaries
+
+    // here's a basic example:
+    class CoolClass {
+    public:
+        int* data;
+        size_t size;
+
+        CoolClass() : data(nullptr), size(0) {
+            std::cout << "default constructor called" << std::endl;
+        }
+
+        // copy constructor , make new pointers
+        CoolClass(const CoolClass& other) : size(other.size) {
+            if (other.data == nullptr || other.size == 0) {
+                data = nullptr;
+                size = 0;
+            } else {
+                // expensive copy operation and malloc
+                data = new int[size];
+                std::copy(other.data, other.data + size, data);
+            }
+            std::cout << "cool copy constructor called" << std::endl;
+        }
+
+        // move constructor , just steal the pointer values
+        CoolClass(CoolClass&& other) noexcept : data(other.data), size(other.size) {
+            // reset source resources
+            other.data = nullptr;
+            other.size = 0;
+            std::cout << "cool class move constructor called" << std::endl;
+        }
+
+        ~CoolClass() {
+            delete[] data;
+        }
+    };
+
+    // FUNCTION RETURN
+    // here is an example of the move constructor being invoked on function
+    // return:
+    auto create_cool_class = [](size_t size){
+        CoolClass c1;
+        c1.size = size;
+        c1.data = new int[size];
+
+        std::cout << "returning cool class" << std::endl;
+
+        // move constructor will be used here ONLY if RVO isn't used
+        return c1;
+    };
+
+    // the issue is that it won't use the move constructor unless we compile with
+    // RVO disabled. if we have RVO enabled , then we don't even need the move
+    // constructor because RVO is even better. RVO will make the object directly
+    // in place of &cc. see return_value_optimization() to learn about RVO.
+    CoolClass cc = create_cool_class(1555);
+    // compile like so: g++ -fno-elide-constructors .\notes.cpp
+    // and it should print that the move constructor was called.
+
+    // why is it using the move constructor though ? well this is what happens
+    // when we use the move constructor:
+    // 1. c1 on the function stack frame is returned. this is treated like
+    //    std::move(c1) , and c1 is treated like an rvalue because it is being
+    //    returned by a function. c1's data gets stolen by a temporary object on
+    //    the caller's stack , this is another rvalue. by "stolen" , we mean
+    //    exactly what the move constructor does , like doing CoolClass temp(c1).
+    // 2. the function stack frame is cleaned up and c1 is destroyed.
+    // 3. we then move the temporary to the variable cc being initialized. this
+    //    means we do another move call.
+    // 4. the temporary object is then destroyed.
+
+    // but wait ... why does it only print "cool class move constructor called"
+    // once if we call it twice. well that's because when we initialize an
+    // object on the same line that we define it , even without RVO , the
+    // compiler optimizes away the need for a temporary if it can. this is called
+    // copy elision and you can read more about it later on in copy_elision().
+
+    // so i lied to you and in actuality , the move happens directly from the c1
+    // variable on the function stack frame to the cc variable on the caller
+    // stack frame. the reason i lied first is to keep your understanding of
+    // variable initialization consistent with everything we have leared so far.
+
+    // PASSING TEMPORARIES
+    auto process_object = [](CoolClass obj){
+        std::cout << "processing object with size: " << obj.size << std::endl;
+    };
+    std::cout << "passing temporary to process_object" << std::endl;
+    process_object(create_cool_class(200)); // we are passing an rvalue
+    // this is what prints:
+    /**
+        passing temporary to process_object
+        default constructor called
+        returning cool class
+        cool class move constructor called
+        processing object with size: 200
+     */
+    // this is similar to before but instead of moving the rvalue of the
+    // function return to the caller stack , we pass it to the process_object
+    // function directly.
+
+    // if we tried doing this
+    process_object(CoolClass{});
+    // copy elision would prevent the move constructor from being called and it
+    // would use the default constructor to build the temporary directly inside
+    // the process_object stack frame.
+
+    // STD::MOVE
+    // std::move() is often misundertsood. it actually does .. NOTHING. it only
+    // casts lvalues to rvalue references. here is the whole code for std::move
+    /**
+     template<typename T>
+     T&& move(T& obj) {
+         return static_cast<T&&>(obj);
+     }
+    */
+
+    // what problem does this solve ? well when we do something like:
+    CoolClass a;
+    a.size = 5;
+    a.data = new int[]{1, 2, 4};
+
+    CoolClass b = a;
+    // the above calls  the copy constructor , which is expensive. if we want
+    // to invoke the move constructor instead , then we need to cast `a` as a
+    // temporary. we can use std::move to do this:
+    std::cout << "using std::move" << std::endl;
+    CoolClass c = std::move(a);
+
     return 0;
 }
 
