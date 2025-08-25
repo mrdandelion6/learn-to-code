@@ -2173,6 +2173,52 @@ int new_delete_operators() {
     return 0;
 }
 
+int lambda_functions() {
+    // lambda functions allow for anonymous function objects.
+    // this is practical for short functions you wouldn't want to name and just make them in line.
+    // they also allow you to define functions within functions , something you
+    // otherwise could not do.
+
+    // here is the basic syntax:
+    // [capture_clause](parameters) -> return_type { function_body; };
+
+    // eg)
+    auto add = [](int a, int b) -> int { return a + b; };
+    std::cout << "5 + 3 = " << add(5, 3) << std::endl;
+    // now we can use add(a, b) to add stuff. notice we catured nothing in this example.
+
+    // CAPTURING VARIABLES
+    // lambda functions have a unique feature called capturing variables, whatever you but inside the [].
+    // what it means to capture a variable is that you give a copy of that variable to the lambda object.
+
+    // for example
+    int x = 69;
+    auto foo = [x](int a) -> int {return x + a; };
+    // here , foo gets its own copy of x baked into the lambda object. think of the lambda object as adopting
+    // a constant with the value x. in this case u can almost imagine that x is some non-mutable field of the lambda.
+
+    std::cout << "foo(5) is " << foo(5) << std::endl;
+
+    // if we wanted to mutate x , we could pass it by reference like this:
+    auto bar = [&x](int a) { x += a; };
+    bar(5); // should mutate existing variable x by adding 5 to it
+
+    std::cout << "x is now: " << x << std::endl;
+    // should be 69 + 5 = 74 now.
+
+    // CAPTURE CLAUSE OPTIONS
+    //  []: captures nothing
+    //  [=]: captures all variables by value
+    //  [&]: captures all variables by reference
+    //  [var]: captures var by value
+    //  [&var]: captures var by reference
+    //  [=, &var]: captures all variables by value but var by reference
+    //  [&, var]: captures all variables by reference but var by value
+    //  [this]: captures the `this` pointer
+
+    return 0;
+}
+
 int oop() {
     // one of the main upgrades of C over C++ is the that it allows for object oriented programming.
     // object oriented programming allows for classes, which will be the discussed in the next section
@@ -3658,7 +3704,7 @@ int rule_of_three_five() {
         // no move operations declared
         // copy operations still generated (but deprecated) for c++11
 
-        // if you want to be explicit:
+        // showing what happens explicitly
         // Base(const Base&) = default;
         // Base& operator=(const Base&) = default;
         // Base(Base&&) = delete;
@@ -3669,6 +3715,7 @@ int rule_of_three_five() {
     public:
         // same story - no move operations
     };
+
     // this can be an issue if we want to also have move and copy operations on
     // our classes. to get around this , you can just default generate them:
     class Base2 {
@@ -3705,52 +3752,6 @@ int rule_of_three_five() {
     // wanted to do a move , then we would just change the ownership of the
     // pointer. see smart_pointers() to learn about moving ownership for
     // unique_ptr types.
-    return 0;
-}
-
-int lambda_functions() {
-    // lambda functions allow for anonymous function objects.
-    // this is practical for short functions you wouldn't want to name and just make them in line.
-    // they also allow you to define functions within functions , something you
-    // otherwise could not do.
-
-    // here is the basic syntax:
-    // [capture_clause](parameters) -> return_type { function_body; };
-
-    // eg)
-    auto add = [](int a, int b) -> int { return a + b; };
-    std::cout << "5 + 3 = " << add(5, 3) << std::endl;
-    // now we can use add(a, b) to add stuff. notice we catured nothing in this example.
-
-    // CAPTURING VARIABLES
-    // lambda functions have a unique feature called capturing variables, whatever you but inside the [].
-    // what it means to capture a variable is that you give a copy of that variable to the lambda object.
-
-    // for example
-    int x = 69;
-    auto foo = [x](int a) -> int {return x + a; };
-    // here , foo gets its own copy of x baked into the lambda object. think of the lambda object as adopting
-    // a constant with the value x. in this case u can almost imagine that x is some non-mutable field of the lambda.
-
-    std::cout << "foo(5) is " << foo(5) << std::endl;
-
-    // if we wanted to mutate x , we could pass it by reference like this:
-    auto bar = [&x](int a) { x += a; };
-    bar(5); // should mutate existing variable x by adding 5 to it
-
-    std::cout << "x is now: " << x << std::endl;
-    // should be 69 + 5 = 74 now.
-
-    // CAPTURE CLAUSE OPTIONS
-    //  []: captures nothing
-    //  [=]: captures all variables by value
-    //  [&]: captures all variables by reference
-    //  [var]: captures var by value
-    //  [&var]: captures var by reference
-    //  [=, &var]: captures all variables by value but var by reference
-    //  [&, var]: captures all variables by reference but var by value
-    //  [this]: captures the `this` pointer
-
     return 0;
 }
 
