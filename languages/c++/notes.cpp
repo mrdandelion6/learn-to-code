@@ -131,6 +131,7 @@ int constexpr_constructor();
 int operators();
 int operator_overloading();
 int assignment_operators();
+int rule_of_three_five();
 int polymorphism();
 int virtual_functions();
 int vtables();
@@ -3611,6 +3612,96 @@ int move_constructor() {
     // user defined move constructors , you need to explicitly call the parent
     // move constructor or else it will call the default parent constructor.
 
+    return 0;
+}
+
+int constexpr_constructor() {
+    // constexpr constructors are constructors that can be evaluataed at
+    // compile time. this is a powerful feature that allows us to create objects
+    // at compile time rather than run time wen possible.
+
+    // take a look at the following class:
+    class Rectangle {
+    private:
+        double width_, height_;
+    public:
+
+        // constexpr keyword for constructor
+        constexpr Rectangle(double w, double h) 
+        : width_(w), height_(h) {
+            // only works in C++14+ , otherwise this won't be constexpr
+            // constructor. it might be too complex for earlier versions.
+            if (w < 0 || h < 0) {
+                throw std::invalid_argument("Negative dimensions");
+            }
+        }
+
+        // other stuff
+        constexpr double area() const { 
+            return width_ * height_; 
+        }
+        constexpr double perimeter() const { 
+            return 2 * (width_ + height_); 
+        }
+    };
+
+    // usage - these are evaluated at compile time
+    constexpr Rectangle rect(5.0, 3.0);
+    constexpr double area = rect.area();  // computed at compile time
+
+    // CONSTEXPR CONDITIONS
+    // for a constructor to be constexpr , these are the requirements:
+    // 1. body must be empty or only simple statements (in C++11) , or any
+    //    statements that can be evaluated at compile time (C++14+).
+    // 2. all member intitializers must be constant expressions
+    // 3. base class constructors (if any) must also be constexpr
+    // 4. no virtual base classes
+    // 5. all non-static data members must be initialized
+
+    // we cannot do something like
+    int a = 5;
+    int b = 8;
+    // constexpr Rectangle recti(a, b);
+    // this is because a and b are not constexpr types , violates #2. we can fix
+    // this by adding constexpr:
+    constexpr int c = 5;
+    constexpr int d = 8;
+    constexpr Rectangle recti(c, d); // works fine
+
+    // DYNAMIC CONSTRUCTION
+    // we can have runtime construction using constexpr constructor , we won't
+    // get any errors as long as you don't use the constexpr expression on the
+    // object being created. for example , if we are calling a constexpr
+    // construction after taking something like user input:
+    int x;
+    int y;
+    std::cout << "you are constructing a rectangle." << std::endl;
+
+    std::cout << "enter length: ";
+    std::cin >> x;
+
+    std::cout << "enter width: ";
+    std::cin >> y;
+
+    // this is fine! but adding a constexpr infront of it gives an error.
+    Rectangle recto(x, y);
+
+    // or something as simple as just using non constexpr variables , this will
+    // construct the object at runtime:
+    Rectangle rectu(a, b); // recall a and b are not constexpr
+
+    return 0;
+}
+
+int operators() {
+    return 0;
+};
+
+int operator_overloading() {
+    return 0;
+}
+
+int assignment_operators() {
     return 0;
 }
 
