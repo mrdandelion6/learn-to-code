@@ -3692,11 +3692,169 @@ int constexpr_constructor() {
     return 0;
 }
 
-int operators() {
-    return 0;
+
+class MyClass2 {
+    int x;
+public:
+    MyClass2(int x) : x(x) {}
+
+    // declare the signature as friend
+    friend std::ostream& operator<<(std::ostream& os, const MyClass2& m);
+
+    // we define - as a non-member function and + as a member function
+    friend MyClass2 operator-(const MyClass2& lhs, const MyClass2& rhs);
+    MyClass2 operator+(const MyClass2& other) const {
+        return MyClass2(x + other.x);
+    }
+
+    // uncommenting this yields an error
+    // friend MyClass2& operator=(const MyClass2& lhs, const MyClass2& rhs);
+
+    // example of a member function for +=
+    MyClass2& operator+=(MyClass2& other) {
+        x += other.x;
+        return *this;
+    }
+
+    // example of a non member function for -=
+    friend MyClass2& operator-=(MyClass2& lhs, MyClass2& rhs);
 };
 
+std::ostream& operator<<(std::ostream& os, const MyClass2& m) {
+    return os << "{" << m.x << "}" << std::endl;
+}
+MyClass2 operator-(const MyClass2& lhs, const MyClass2& rhs) {
+    return MyClass2(lhs.x - rhs.x);
+}
+MyClass2& operator-=(MyClass2& lhs, MyClass2& rhs) {
+    lhs.x = rhs.x;
+    return lhs;
+}
+
 int operator_overloading() {
+    // operator overloading allows you to define custom behaviour for operators
+    // like + , - , == , << , etc. with your class. this makes your classes feel
+    // more naturla and intuitive to use.
+
+    // SYNTAX
+    // there are two main ways to overload operators , member functions and non
+    // member functions.
+
+    // member function example
+    class MyClass {
+        int x;
+    public:
+        MyClass(int x) : x(x) {}
+
+        // operator defined as a member function
+        MyClass operator+(const MyClass& other) const {
+            return MyClass(x + other.x);
+        }
+    };
+
+    // non-member function example:
+    MyClass2 mc2(69);
+    std::cout << "mc2 is: " << mc2 << std::endl;
+    // you can see the implementation of MyClass2 above this function. in this
+    // case , we did not define the operator as a member function of MyClass2.
+    // this is because it takes an ostream ref as the lhs and our class as the
+    // rhs. we can see from the function signature that it is not a member
+    // function for any class , not even ostream:
+    std::ostream& operator<<(std::ostream& os, const MyClass2& m);
+
+    // also note that we declared the << operator in our class with the friend
+    // keyword so that it could access the private member x.
+
+    // WHEN TO DEFINE OPERATORS AS MEMBER FUNCTIONS AND WHEN NOT
+    // it is a bit complicated when we want to define an operators as a member
+    // function like we did for MyClass:operator+ , and when to define them as
+    // non-member functions like we did for <<. generally ,
+
+    // define as member function when the operator:
+    // - modifies the left operand (= , += , -=)
+    // - is a special syntax operartor ([] , (), -> , more on these later)
+
+    // define as a non-memeber function when the operator:
+    // - creates new values (+ , - , == , < , >)
+    // - needs symmetery (same ops as above)
+    // - the left operand isn't your class (cout << MyClass)
+
+    // BINARY OPERATIONS AND BOOLEAN COMPARISONS SHOULD BE NON MEMBER FUNCTIONS
+    // you might be thinking , why would we want to define binary operators and
+    // boolean comparisons as non-member functions. well , a few reasons:
+    // - symmetric implicit conversions
+    // - consistency , even if we don't need use the operation with conversions
+    // - generic code from template functions and stand library algorithms expect
+    //   non-member operators. but modern C++ usually is fine either way.
+
+    // for example , consider the MyClass2 implementation above this function.
+    // it has a member function for + but a regular , free function for -.
+    MyClass2 a(9);
+    MyClass2 b(69);
+
+    // with member function operations we can do this:
+    MyClass2 c = a + 5; // will implicitly convert 5 to MyClass2(5)
+
+    // but we cannot do this:
+    // MyClass2 d = 5 + a;
+
+    // with the external function , the signature allows us to have conversions
+    // for either operand:
+    MyClass2 d = a - 5;
+    MyClass2 e = 5 - a;
+
+    // a general note on conversions: they require a matching constructor. so if
+    // we are needing to convert type X to type Y, we need a constructor for Y
+    // that has a signature X(Y obj). so for MyClass2 , we cannot have
+    // conversions to arbitrary types , only for ints and anything that can be
+    // converted to an int. for example , a float.
+    MyClass2 f = a + 5.6; // implicit conversion like MyClass2(int(5.6)).
+
+    // but this won't work:
+    // MyClass2 g = a + "5";
+    // uncommenting the above yields and error as int("5") isn't a valid cstr.
+
+    // now you might be wondering , what if we aren't going to use the operation
+    // with any conversions and only use it between operands of the class. in
+    // that case , is there anything else that compels us to use non member
+    // functions? the answer is just for consistency really , or if you plan on
+    // possibly having conversions later , then it would be good defensive
+    // programming to use non member functions. that being said , it is fine to
+    // use member functions if you do not need any conversions. all of this also
+    // applies for comparison operators like == and >.
+
+    // ASSIGNMENT OPERATORS SHOULD BE MEMBER FUNCTIONS
+    // it is a language requirement for the = function to be a member function.
+    // if we add the following to MyClass2 , it will generate a compiler error:
+    // friend MyClass2& operator=(const MyClass2& lhs, const MyClass2& rhs);
+    // you can try uncommenting the comment made in the class and see what
+    // happens. we will learn more about assignment operators in the next
+    // section , assignment_operators().
+
+    // while the = operator is required to be a member function , += , -= , and
+    // *= are not. that being said , it is best practice to have these also as
+    // member functions. that is because:
+    // - they modify the left operand
+    // - they don't require symmtery for conversions (LHS is always the class)
+    // - they need to modify private data
+
+    // take a look at the MyClass2 definition for an example , += is defined as
+    // member function and -= is defined as a non member.
+
+    // SPECIAL SYNTAX OPERATORS
+    // special syntax operators are operators with unique syntax tjat must be 
+    // overloaded. here is a full list:
+    // - subscript operator []
+    // - function call operator ()
+    // - arrow operator ->
+    // - type conversion operator Type()
+    // - address operator &
+    // - comma operator ,
+
+    // the dereference operator isn't here because it is not considered part of
+    // the special syntax ops , you can define it as a non-member function.
+
+    // TODO: make notes on the rest of the operators
     return 0;
 }
 
