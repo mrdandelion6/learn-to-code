@@ -128,7 +128,6 @@ int destructors();
 int copy_constructor();
 int move_constructor();
 int constexpr_constructor();
-int operators();
 int operator_overloading();
 int assignment_operators();
 int rule_of_three_five();
@@ -214,7 +213,7 @@ int fast_cpp_csv_parser();
 
 int main() {
     // RUN
-    move_constructor();
+    assignment_operators();
     return 0;
 }
 
@@ -3702,6 +3701,88 @@ int operator_overloading() {
 }
 
 int assignment_operators() {
+    // recall assignment operators from the previous section and that they must
+    // be member functions. there are actually two kinds of assignment ops. just
+    // like with copy and move constructors , there are copy and move assignment
+    // operators.
+
+    // see the following example:
+    class CoolClass {
+    public:
+        int x;
+        int* data;
+        CoolClass(int x, int d) : x(x), data(new int(d)) {}
+        ~CoolClass() { delete data; }
+
+        // copy assignment
+        CoolClass& operator=(CoolClass& other) {
+            std::cout << "copy ass invoked" << std::endl;
+
+            x = other.x;
+            if (data != nullptr) {
+                delete data;
+            }
+
+            // we want to create a whole copy of the data.. this is expensive
+            if (other.data == nullptr) {
+                data = nullptr;
+            } else {
+                data = new int(*other.data); // expensive
+            }
+
+            return *this;
+        }
+
+        // move assignment
+        CoolClass& operator=(CoolClass&& other) {
+            std::cout << "move ass invoked" << std::endl;
+
+            // transfer primitive
+            x = other.x;
+            other.x = 0;
+
+            // transfer pointer
+            data = other.data;
+            other.data = nullptr;
+
+            return *this;
+        }
+    };
+
+    // everything you know about move and copy constructors applies to the
+    // assignment operators as well. to review , see move_constructor() and
+    // copy_constructor(). the only thing you need to know additionally is how
+    // to invoke either assignment and why we have a return value.
+
+    // as for invoking either assignnment it is rather simple , the move
+    // assignment will be invoked when the rhs operand is a temporary:
+    CoolClass x(6, 9);
+    x = CoolClass(15, 18); // rhs is a temporary , invokes move assignment
+
+    // otherwise , if the rhs is a lvalue reference (not a temporary) , then the
+    // copy constructor is invoked:
+    CoolClass y(61, 91);
+    x = y; // y is passed as an lvalue reference as it is not a temporary.
+
+    // RETURN TYPE
+    // as for why we return type CoolClass& for both assignments , there are a
+    // few reasons:
+    // - allow chaining , x = y = z
+    // - consistency with built in types (int , float , etc.)
+    // - method chaining
+
+    // see chaining() for more info about chaining in C++. returning an lvalue
+    // ref allows us to chain the assignment to multiple variables:
+    CoolClass z(6, 8);
+    std::cout << "chaining..." << std::endl;
+    z = x = y; // invokes copy constructor twice!
+
+    // similarly , we can use functions directly on assignments:
+    auto some_meth = [](CoolClass& cc){
+        std::cout << "cc has x:" << cc.x << std::endl;
+    };
+    some_meth(x = z); // passes in the LHS operand , x , to the function
+
     return 0;
 }
 
