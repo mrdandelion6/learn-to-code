@@ -84,6 +84,7 @@ int floats();
 int views();
 
 // LANGUAGE FEATURES
+int chaining_assignments();
 int references();
 int range_based_for();
 int lvalues_rvalues();
@@ -138,6 +139,7 @@ int override_keyword();
 int diamond_problem();
 int pure_virtual_functions();
 int virtual_constructors_destructors();
+int functors();
 int templates();
 
 // KEYWORDS
@@ -213,7 +215,7 @@ int fast_cpp_csv_parser();
 
 int main() {
     // RUN
-    assignment_operators();
+    templates();
     return 0;
 }
 
@@ -3937,7 +3939,7 @@ int assignment_operators() {
 
     // similarly , we can use functions directly on assignments:
     auto some_meth = [](CoolClass& cc){
-        std::cout << "cc has x:" << cc.x << std::endl;
+        std::cout << "cc has x: " << cc.x << std::endl;
     };
     some_meth(x = z); // passes in the LHS operand , x , to the function
 
@@ -4880,6 +4882,128 @@ int virtual_constructors_destructors() {
     return 0;
 }
 
+template<typename T>
+T cool_max(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+template<typename T>
+class CoolStack {
+private:
+    std::vector<T> elements;
+public:
+    void push(const T& item) {
+        elements.push_back(item);
+    }
+    T pop() {
+        return elements.pop_back();
+    }
+};
+
+template<typename T, typename U>
+class CoolPair {
+private:
+    T first;
+    U second;
+public:
+    CoolPair(const T& f, const U& s) : first(f), second(s) {}
+    T getFirst() const { return first; }
+    U getSecond() const { return second; }
+};
+
+template<typename T>
+class CoolContainer {
+public:
+    void info() { std::cout << "Generic container" << std::endl; }
+};
+template<>
+class CoolContainer<bool> { // specialization for bool type
+public:
+    void info() { std::cout << "Specialized bool container" << std::endl; }
+};
+
 int templates() {
+    // templates are one of C++ most powerful features that enable "generic
+    // programming"--writing code that works with multiple types without having
+    // to rewrite it for each specific type.
+
+    // templates enable:
+    // - code reuse
+    // - type safety: compiler genrates type specific code
+    // - no runtime overhead: templates are resolved at compile time
+    // - flexiblity: works with user defined types too
+
+    // let's begin with a basic example of a template function. see the
+    // cool_max() function above this section. here is a comment for it:
+    /**
+     template<typename T>
+     T cool_max(T a, T b) {
+         return (a > b) ? a : b;
+     }
+    */
+
+    // it is almost as if we take an additionl parameter T , representing a type
+    // for our values. and that is exactly what they are called: template
+    // parameters.
+
+    // that being said , it's important to know that template parameters are not
+    // treated the same way as regular ones. otherwise that would mean we are
+    // determining the type at runtime... but templates are resolved at compile
+    // time.
+
+    // templates are a way to signal the compiler to resolve generic types. we
+    // say "hey we might expect different types for this piece of code" , and
+    // then the compiler sees all the different types we called the template
+    // function with , and generates code for all of them. for example , we
+    // could call the cool_max() function with integers and also custom classes:
+    class CustomClass {
+    public:
+        int x, y;
+        CustomClass(int x, int y) : x(x), y(y) {}
+        bool operator>(CustomClass& other) {
+            std::cout << "called > for customclass" << std::endl;
+            return (x > other.x) ? true : false;
+        }
+    };
+
+    // now we can call cool_max with any generic type that has > defined:
+    std::cout << "cool_max(4, 5): " << cool_max(4, 5) << std::endl;
+
+    CustomClass max_cc = cool_max(CustomClass(6, 9), CustomClass(10, 6));
+    std::cout << "max_cc" << "(" << max_cc.x << ", " << max_cc.y << ")"
+        << std::endl;
+
+    // since we called cool_max with int type and also CustomClass type , the
+    // compiler generates two versions. one where T = int and one where T =
+    // CustomClass. but for example , it won't generate a version where we have
+    // T = string.
+
+    // CLASS TEMPLATES
+    // you can also have classes that rely on templates. see the class above this
+    // section , CoolStack. the exact same we said about template functions
+    // applies to templates class.
+
+    // when defining class templates , we need to pass the actual template param:
+    CoolStack<int> cool_stacker;
+    // for template functions , the type is just inferred by the args we pass.
+
+    // MULTIPLE TEMPLATE PARAMETERS
+    // we can also have multiple type parameters like:
+    // template<typename T, typename U>
+    // see CoolPair class above this section for an example.
+
+    // TEMPLATE SPECIALIZATION
+    // you can provide "specialized templates" for specific types. this means we
+    // can have a generic template class / function and create a specific class
+    // / function for a type. pretty self explanatory why this is useful. it is
+    // simply convenient overriding. see the CoolContainer example above this
+    // function. see when we define any container that has T != bool , we invoke
+    // the generic template class:
+    CoolContainer<int> coolio;
+    coolio.info(); // generic
+
+    CoolContainer<bool> boolio;
+    boolio.info(); // specialized
+
     return 0;
 }
