@@ -80,7 +80,6 @@ int maps();
 int sets();
 int optional();
 int expected();
-int floats();
 int views();
 
 // LANGUAGE FEATURES
