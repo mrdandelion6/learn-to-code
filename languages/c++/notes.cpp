@@ -5004,5 +5004,10 @@ int templates() {
     CoolContainer<bool> boolio;
     boolio.info(); // specialized
 
+    // there is a lot more to know about templates (meta templates , perfect
+    // forwarding , variadic templates , traits and policies , and so on. since
+    // the list of topics is so broad , we will spread them out into many
+    // sections.
+
     return 0;
 }
