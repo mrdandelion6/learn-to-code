@@ -367,7 +367,7 @@ fn module_system() {
             a + b
         }
     }
-    
+
     // above is an inline module declaration. we defined the module inside this file.
     // we could alternatively 'import' modules using the mod keyword
     // for example : mod math;
@@ -395,7 +395,6 @@ fn module_system() {
     // defining modules inside functions will also limit their scope to only inside the function.
         // you can test this by checking the separate_function() function below and uncommenting some code. 
     // usually we define and declare models at the file level.
-    
 
     // IMPORTING MODULE
     // to import a module in main.rs, we would have something like:
@@ -418,9 +417,8 @@ fn module_system() {
         // look for foo/math/mod.rs (if foo/math/ exists)
         // look for foo/math.rs (if folder foo/ exists)
     // if multiple of those exist, rust will choose the one in precedence of the order listed. (looks for math.rs first).
-    
 
-} 
+}
 
 fn separate_function() {
     let x = math2::add2(3, 3); 

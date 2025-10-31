@@ -12,9 +12,9 @@ Here are notes I've made on various programming languages. Most of them are ongo
 - 🏁 `C` and systems programming, pipes, processes, and sockets. made for **CSC209H5 Winter 2024/2025**.
 - 🏁 `JavaScript` and DOM
 - 🏁 `Bash` (not in depth)
-- 🚧 `C++` 
-- 🚧 `Rust` 
-- 🚧 `Python`, `Django`, and `Jupyter` (all in **python/** folder. has no beginner friendly notes for python language). 
+- 🚧 `C++`
+- 🚧 `Rust`
+- 🚧 `Python`, `Django`, and `Jupyter` (all in **python/** folder. has no beginner friendly notes for python language).
 - 🚧 `SQL`
 - 🚧 `Scala`
 - 🚧 `x86`
@@ -25,7 +25,7 @@ Here are notes I've made on various programming languages. Most of them are ongo
 
 ### To Start
 - CUDA (know it already)
-- HIP (to learn)
+- HIP (know it already)
 - MATLAB (know it already)
 - TypeScript (know it already)
 - React (know it already)
@@ -49,7 +49,7 @@ I have made quite a few notes on important computer science topics as well.
 - 🏁 `Using VS Code`
 - 🚧 `Git`
 - 🚧 `Docker`
-  
+
 ### To Start
 - Quantum Computing (architecture, underlying physics, but mostly focused on programming with Qiskit)
 
