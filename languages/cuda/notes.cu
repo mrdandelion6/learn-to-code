@@ -1,12 +1,13 @@
-// WELCOME TO MY CUDA NOTES
+// welcome to my cuda notes. prerequisites: ../c/notes.c and ../c++/notes.cpp
 
 // INTRO & FUNDAMENTALS
 int what_is_cuda();
-int gpu_architecture_overview();
-int cuda_programming_model();
-int host_device_paradigm();
-int cuda_toolkit_components();
+int what_are_drivers();
 int cuda_driver_vs_runtime();
+int host_device_paradigm();
+int cuda_programming_model();
+int gpu_architecture_overview();
+int cuda_toolkit_components();
 int compute_capability();
 int nvcc_compiler();
 
@@ -71,6 +72,8 @@ int memory_fence_operations();
 // SYNCHRONIZATION & COMMUNICATION
 int __syncthreads();
 int __syncwarp();
+int intra_warp_communication();
+int inter_warp_communication();
 int cooperative_groups_sync();
 int grid_synchronization();
 int inter_block_communication();
@@ -289,5 +292,51 @@ int reproducibility_debugging();
 
 int main() {
     // RUN
+    return 0;
+}
+
+int what_is_cuda() {
+    // CUDA can refer to two things:
+    //   1. a parallel computing platform for NVIDIA GPUs. this includes the
+    //      drivers , runtime libraries , dev tools , and so on
+    //
+    //   2. a language extension to C++. the specific syntax additions that
+    //      let you write GPU code
+    //
+    // usually people refer to CUDA as the whole platform / ecosystem , but
+    // sometimes it is referred to as a "programming language"--though it's
+    // much more than that.
+    //
+    // so when you write some "CUDA code" , you are essentialy writing C++ with
+    // special syntax that can be compiled by a special compiler (nvcc) into a
+    // binary.
+    //
+    // what's special about this binary is that unlike a regular gcc compiled
+    // binary , this one contains both:
+    //   - regular x86/ARM CPU code (host code)
+    //   - GPU bytecode/machine code (device code) that can run on GPU cores
+    //
+    // the CUDA runtime handles launching the GPU code , managing memory
+    // between CPU and GPU , and coordinating execution. regular gcc binaries
+    // can talk to the GPU driver but can't execute code on the GPU itself.
+    //
+    // we will talk about what exactly GPU bytecode is later on in these notes.
+    // in the next sections we talk about what exactly the "CUDA runtime" is and
+    // how it relates to CUDA drivers. but before that we must first understand
+    // what drivers even are.
+    return 0;
+}
+
+int what_are_drivers() {
+    return 0;
+}
+
+int cuda_driver_vs_runtime() {
+    return 0;
+}
+
+int intra_warp_communication() {
+    // intra-warp communication is about threads communicating within the same
+    // warp. intra means "within" itself.
     return 0;
 }
