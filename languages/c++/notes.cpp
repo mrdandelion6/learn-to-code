@@ -152,6 +152,12 @@ int constexpr_keyword();
 int explicit_keyword();
 int consteval_keyword();
 
+// COMPILER KEYWORDS
+int restrict_keyword();
+int attribute_keyword();
+int volatile_keyword();
+int device_and_global_keywords();
+
 // TEMPLATE METAPROGRAMMING & DESIGN PATTERNS
 int meta_templates();
 int perfect_forwarding();
@@ -447,17 +453,17 @@ int declaring_defining_initializing() {
 }
 
 int compiling_cpp() {
-    // compiling C++ is very similar to compiling C. 
+    // compiling C++ is very similar to compiling C.
     // C++ has its own compiler, just like C.
-    // recall that C uses the GNU C compiler (gcc).
-    // similarly, C++ uses g++
+    // recall one of the most popular compilers for C is the GNU C compiler
+    // (gcc). similarly , C++ has the GNU C++ compiler , called g++.
 
     // the compilation process for C++ is much more complex than for C.
-    // C is just a procedural programming language, so its compilation at the file level mostly consists
-    // of simply turning C source code into machine code.
-    // whereas C++ is a multi-paradigm language that supports many high level things like oops, templates
-    // and exceptions.
-    // this leads to a much more complex compilation process for C++.
+    // C is just a procedural programming language, so its compilation at the
+    // file level mostly consists of simply turning C source code into machine
+    // code. whereas C++ is a multi-paradigm language that supports many high
+    // level things like oops, templates and exceptions. this leads to a much
+    // more complex compilation process for C++.
 
     // the compilation process for C++ itself is also very similar to C.
     // recall in C:
@@ -513,7 +519,8 @@ int compiling_cpp() {
 
 int compilation_flags() {
     // now lets finally take a look at how compilation commands look like in C++
-    // compilation in C++ looks identical to C for the most part.
+    // compilation in C++ looks identical to C for the most part , but of course
+    // this depends on the compiler. we will be using g++.
 
     // recall in C we have:
         // gcc -o notes notes.c 
