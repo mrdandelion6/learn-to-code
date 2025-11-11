@@ -1,6 +1,7 @@
 // welcome to my cuda notes. prerequisites: ../c/notes.c and ../c++/notes.cpp
 
 // INTRO & FUNDAMENTALS
+int getting_started();
 int what_is_cuda();
 int what_are_drivers();
 int cuda_driver_vs_runtime();
@@ -292,6 +293,12 @@ int reproducibility_debugging();
 
 int main() {
     // RUN
+    return 0;
+}
+
+int getting_started() {
+    // in order to compile and run these notes , you need an NVIDIA GPU and CUDA properly
+    // installed on your machine. you can find some guides in setup/
     return 0;
 }
 
