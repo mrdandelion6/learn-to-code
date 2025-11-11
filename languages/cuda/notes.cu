@@ -335,6 +335,60 @@ int what_is_cuda() {
 }
 
 int what_are_drivers() {
+    // a driver is software that acts as a translator between operating systems
+    // and a hardware device.
+    //
+    // the OS and user programs are higher levels of abstraction on top of
+    // hardware. the hardware speaks in specic low-level instructions ,
+    //  - specific voltage signals
+    //  - register writes
+    //  - DMA operations
+    //
+    // the driver's job is to map the OS' requests to actual hardware operations.
+    //
+    // so a driver is a the piece of software that allows the OS to use a
+    // specific of hardware , without requiring the OS to know its internal
+    // details.
+
+    // this is where drivers fit into the OS architecture:
+    /*
+    +-------------------------+
+    | User Space Applications |
+    +-------------------------+
+    |     OS System Calls     |
+    +-------------------------+
+    | Kernel (device drivers) |
+    +-------------------------+
+    |     Hardware Devices    |
+    +-------------------------+
+    */
+    // a little rehash of operating systems (see my OS notes for more info):
+    //  - user space: programs like chrome , blender , or your game
+    //  - kernel space: trusted code that manages hardware access like drivers
+    //  - hardware: your GPU , SSD , network card , etc.
+    //
+    // the OS kernel cannot directly support every hardware. that would not be
+    // a pracitcal design. instead the OS provides a driver interface with APIs
+    // and protocols. hardware vendors , like AMD and NVIDIA , write drivers
+    // that conform to this interface , so the OS can talk to the device safely
+    // and efficiently.
+    //
+    // broadly speaking , there are 3 kinds of drivers
+    //  1. kernel-mode drivers:
+    //      these run in privileged mode and can access hardware directly. some
+    //      eg) disk drivers , GPU drivers , network interface drivers
+    //  2. user-mode drivers:
+    //      there run in user space. this is more safe and portable when direct
+    //      hardware access isn't crucial. eg) some printer drivers , USB
+    //      peripherals
+    //  3. virtual drivers:
+    //      don't control real hardware , but simulate or translate to something
+    //      else. eg) virtual network adapters (VPNs) , emulated GPUs in VMs
+    return 0;
+}
+
+int gpu_drivers() {
+
     return 0;
 }
 
