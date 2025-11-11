@@ -4,6 +4,7 @@
 int getting_started();
 int what_is_cuda();
 int what_are_drivers();
+int gpu_drivers();
 int cuda_driver_vs_runtime();
 int host_device_paradigm();
 int cuda_programming_model();
@@ -374,21 +375,106 @@ int what_are_drivers() {
     // and efficiently.
     //
     // broadly speaking , there are 3 kinds of drivers
-    //  1. kernel-mode drivers:
-    //      these run in privileged mode and can access hardware directly. some
-    //      eg) disk drivers , GPU drivers , network interface drivers
-    //  2. user-mode drivers:
+    //  1. user-mode drivers (UMD):
     //      there run in user space. this is more safe and portable when direct
     //      hardware access isn't crucial. eg) some printer drivers , USB
     //      peripherals
+    //  2. kernel-mode drivers (KMD):
+    //      these run in privileged mode and can access hardware directly. some
+    //      eg) disk drivers , GPU drivers , network interface drivers
     //  3. virtual drivers:
     //      don't control real hardware , but simulate or translate to something
     //      else. eg) virtual network adapters (VPNs) , emulated GPUs in VMs
+    //
+    //  drivers are all mostly written in C. we write drivers in C because C
+    //  allows for simple direct hardware access. we can't use C++ features
+    //  like exceptions , dynamic memory allocation , or most of the standard
+    //  lib in kernel space--and this is where drivers often run.
+    //
+    //  in kernel space , we don't have exceptions: if an exception is thrown ,
+    //  it crashes the entire system. we do not have dynamic allocators like
+    //  malloc() either , and instead have to use special allocators like
+    //  kmalloc(). C makes it very obvious when you're doing something that might
+    //  not work in kernel space.
     return 0;
 }
 
 int gpu_drivers() {
+    // a GPU driver is one of the most complex and performance critical drivers
+    // in a system. it's responsible for managing:
+    //  - VRAM (gpu's memory)
+    //  - commands queues (instructions sent to the gpu)
+    //  - context switching between gpu tasks
+    //  - shader compilation and optimization
+    //  - synchronization between cpu and gpu
+    //  - exposing high level graphics API like DirectX to applications
+    //
+    //  so when installing drivers for AMD , NVIDIA , or Intel , you don't just
+    //  install one C binary. it's actually a stack of components tha span user
+    //  space and kernel space.
 
+    //  GPU driver stack on linux:
+    /*
+    +--------------------------------------------+
+    | game / app (e.g., Blender, TensorFlow)     |
+    +--------------------------------------------+
+    | graphics API (OpenGL, Vulkan, CUDA, etc.)  |
+    +--------------------------------------------+
+    | user-space Driver (libGL.so, libcuda.so)   |
+    +--------------------------------------------+
+    | kernel-space driver (nvidia.ko, amdgpu.ko) |
+    +--------------------------------------------+
+    | gpu hardware                               |
+    +--------------------------------------------+
+    */
+    // windows has a similar conceptual structure but we take a look at linux
+    // first.
+
+    // USER SPACE DRIVER
+    //
+    // translates high level API calls into GPU commands. also handles shader
+    // compilation , memory managemnt at the logical level , and pipeline setup.
+    //
+    // for example , a kernel launch in CUDA like myKernel<<grid, block>>(data)
+    // would be handled by the CUDA runtime (user space driver). this driver
+    // would:
+    //  1. translate the kernel into PTX code (intermediate GPU assembly)
+    //  2. complie the PTX code into SASS (GPU machine code)
+    //  3. build a command buffer telling the GPU:
+    //      - which kernel to run
+    //      - how many threads / blocks to launch
+    //      - where input / output memory lives
+    //  4. pass that buffer to the kernel space driver.
+    //      - note that this buffer is a list of instructions separate to the
+    //        actual PTX / SASS code
+
+    // KERNEL SPACE DRIVER
+    //
+    // talks directly to the hardware registers via PCIe (peripherical component
+    // interconnect express)--a high speed serial bus that connect the GPU to the
+    // motherboard and CPU.
+    //
+    // this driver handles:
+    //  1. GPU memory allocation
+    //  2. command submission queues
+    //  3. context switcing between apps
+    //  4. power management
+    //  5. interrrupt handling (GPU signals completion or errors)
+
+    // here is a full example. let's say a game needs to render a new frame:
+    //  1. game requests gpu memory -> user-space driver asks kernel driver to
+    //     allocate vram.
+    //
+    //  2. game issues draw commands -> user-space driver builds gpu command
+    //     buffers.
+    //
+    //  3. user-space driver submits command buffers -> kernel driver writes
+    //     them into a ring buffer.
+    //
+    //  4. kernel driver signals gpu -> gpu executes instructions.
+    //
+    //  5. gpu finishes -> triggers interrupt -> kernel driver updates status
+    //     -> user-space notified.
     return 0;
 }
 
