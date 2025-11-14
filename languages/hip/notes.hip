@@ -58,6 +58,7 @@ int scalar_memory_operations();
 int branch_divergence_on_amd();
 int amd_atomic_operations();
 int wavefront_intrinsics();
+int amd_gemm_optimization_strategies(); 
 
 // ROCM ECOSYSTEM TOOLS
 int rocm_smi();
@@ -182,17 +183,4 @@ int hip_portability_initiatives();
 int main() {
   // RUN
   return 0;
-}
-
-int inter_wavefront_vs_inter_thread_communication() {
-    // recall in CUDA that inter warp communication was generally much less
-    // efficient than inter thread communication. let's quickly refresh what
-    // each of these mean first.
-    //
-    // remember that intra means within itself and inter means with others.
-    //
-    // INTER THREAD COMMUNICATION
-    // this means that threads communicate with other threads on the same
-    // warp--wavefront now.
-    return 0;
 }
