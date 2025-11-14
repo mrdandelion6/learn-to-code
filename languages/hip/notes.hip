@@ -180,6 +180,19 @@ int oneapi_hip_interop();
 int hip_portability_initiatives();
 
 int main() {
-    // RUN
+  // RUN
+  return 0;
+}
+
+int inter_wavefront_vs_inter_thread_communication() {
+    // recall in CUDA that inter warp communication was generally much less
+    // efficient than inter thread communication. let's quickly refresh what
+    // each of these mean first.
+    //
+    // remember that intra means within itself and inter means with others.
+    //
+    // INTER THREAD COMMUNICATION
+    // this means that threads communicate with other threads on the same
+    // warp--wavefront now.
     return 0;
 }
