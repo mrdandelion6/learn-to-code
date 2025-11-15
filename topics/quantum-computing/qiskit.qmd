@@ -1,0 +1,20 @@
+---
+  title: "Qiskit Quantum Computing"
+author: "faisal shaik"
+date: "2025-10-31"
+format:
+  html:
+    code-fold: true
+    toc: true
+  pdf:
+    keep-tex: true
+jupyter: python3
+execute:
+  echo: true
+  warning: false
+---
+
+#   Introduction
+
+```{python}
+```
