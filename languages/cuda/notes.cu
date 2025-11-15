@@ -1,8 +1,13 @@
+#include "notes.cuh"
+#include <iostream>
+#include <random>
+#include <vector>
 // welcome to my cuda notes. prerequisites: ../c/notes.c and ../c++/notes.cpp
 
 // INTRO & FUNDAMENTALS
 int getting_started();
 int what_is_cuda();
+int simple_example();
 int what_are_drivers();
 int gpu_drivers();
 int cuda_driver_vs_runtime();
@@ -72,8 +77,8 @@ int atomic_operations();
 int memory_fence_operations();
 
 // SYNCHRONIZATION & COMMUNICATION
-int __syncthreads();
-int __syncwarp();
+int syncthreads();
+int syncwarp();
 int intra_warp_communication();
 int inter_warp_communication();
 int cooperative_groups_sync();
@@ -294,12 +299,13 @@ int reproducibility_debugging();
 
 int main() {
     // RUN
+    simple_example();
     return 0;
 }
 
 int getting_started() {
-    // in order to compile and run these notes , you need an NVIDIA GPU and CUDA properly
-    // installed on your machine. you can find some guides in setup/
+    // in order to compile and run these notes , you need an NVIDIA GPU and CUDA
+    // properly installed on your machine. you can find some guides in setup/
     return 0;
 }
 
@@ -329,9 +335,92 @@ int what_is_cuda() {
     // can talk to the GPU driver but can't execute code on the GPU itself.
     //
     // we will talk about what exactly GPU bytecode is later on in these notes.
-    // in the next sections we talk about what exactly the "CUDA runtime" is and
-    // how it relates to CUDA drivers. but before that we must first understand
-    // what drivers even are.
+    // befor anything else , let's look at a simple example of a CUDA kernel.
+    return 0;
+}
+
+// this kernel is explained in simple_example()
+__global__ void vector_addition(int *a, int *b, int *c) {
+    size_t idx = threadIdx.x;
+    c[idx] = a[idx] + b[idx];
+}
+// pretty small right ? this small guy is the code that will run on our gpu.
+
+int simple_example() {
+    // without really explaining too much of the syntax , we will just look at
+    // quick and simple example of a CUDA kernel--a user written function of
+    // code that will run on the GPU. you can see the example above. the kernel
+    // is the function starting with __global__
+
+    // suppose we want to do vector addition [a_1, a_2, a_3] + [b_1, b_2, b_3].
+    // on a GPU , we can parallelize this by letting each thread handle one
+    // entry's sum. so thread i sums a[i] + b[i] and records it in c[i].
+
+    // we do an example with 64 entries. hopefully this motivates you as to why
+    // gpu programming is very powerful. each entry's will be calculated will be
+    // calculated in parallel instead of sequentially.
+    size_t n = 64;
+
+    // host buffers
+    std::vector<int> h_a = random_vector<int>(n, 0, 100);
+    std::vector<int> h_b = random_vector<int>(n, 0, 100);
+    std::vector<int> h_c(n);
+
+    // device buffers
+    int *d_a;
+    int *d_b;
+    int *d_c;
+
+    // allocate device memory
+    cudaMalloc(&d_a, n * sizeof(int));
+    cudaMalloc(&d_b, n * sizeof(int));
+    cudaMalloc(&d_c, n * sizeof(int));
+
+    // copy host buffers to device buffers--these are our "inputs"
+    cudaMemcpy(d_a, h_a.data(), n * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, h_b.data(), n * sizeof(int), cudaMemcpyHostToDevice);
+
+    // launch the gpu kernel
+    std::cout << "launching kernel..." << std::endl;
+    vector_addition<<<1, n>>>(d_a, d_b, d_c);
+
+    // check for kernel launch errors
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cout << "Kernel launch error: " << cudaGetErrorString(err)
+            << std::endl;
+    }
+
+    // wait for kernel to finish
+    cudaDeviceSynchronize();
+
+    // check for kernel execution errors
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        std::cout << "Kernel execution error: " << cudaGetErrorString(err)
+            << std::endl;
+    }
+
+    // copy the result from device buffer back to host buffer
+    cudaMemcpy(h_c.data(), d_c, n * sizeof(int), cudaMemcpyDeviceToHost);
+
+    // free device memory
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
+
+    // take a look at the results
+    std::cout << vector_head(h_a) << " + " << vector_head(h_b) << " = "
+        << vector_head(h_c) << std::endl;
+
+    // as you may have noticed , we needed to do lots of things in this current
+    // funciton as well. in fact , for this particular example , we had much
+    // more lines in this function then in the actual kernel vector_addition().
+    // this host code vs device code is the fundamental structure of gpu
+    // programming in cuda. we will learn more about this soon.
+
+    // anyhow , i showed lots of things that i did not explain in depth. we will
+    // go over everything but first , we learn about drivers.
     return 0;
 }
 
@@ -396,6 +485,9 @@ int what_are_drivers() {
     //  malloc() either , and instead have to use special allocators like
     //  kmalloc(). C makes it very obvious when you're doing something that might
     //  not work in kernel space.
+    //
+    //  we won't actually talk about kernel driver programming though. instead we
+    //  now focus on gpu drivers.
     return 0;
 }
 
@@ -445,7 +537,7 @@ int gpu_drivers() {
     //      - how many threads / blocks to launch
     //      - where input / output memory lives
     //  4. pass that buffer to the kernel space driver.
-    //      - note that this buffer is a list of instructions separate to the
+    //      - note that this buffer is a list of instructions separate from the
     //        actual PTX / SASS code
 
     // KERNEL SPACE DRIVER
@@ -479,6 +571,12 @@ int gpu_drivers() {
 }
 
 int cuda_driver_vs_runtime() {
+    // the CUDA runtime is a runtime library (recall these from C++ notes). the
+    // CUDA runtime is known as `libcudart` , standing for library-cuda-runtime.
+    // on windows this is a .dll file and on linux this is a .so file.
+    //
+    // when you write any code in CUDA , for example a kernel launch , you are
+    // using the CUDA runtime API.
     return 0;
 }
 
