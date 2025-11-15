@@ -4,6 +4,7 @@
 !*/
 
 .vscode/
+.cache/
 tempCodeRunnerFile*
 
 *.exe
