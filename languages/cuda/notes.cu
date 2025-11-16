@@ -75,6 +75,7 @@ int reduction_primitives();
 int scan_operations();
 int atomic_operations();
 int memory_fence_operations();
+int gemm();
 
 // SYNCHRONIZATION & COMMUNICATION
 int syncthreads();
@@ -299,7 +300,7 @@ int reproducibility_debugging();
 
 int main() {
     // RUN
-    simple_example();
+    gemm();
     return 0;
 }
 
@@ -335,7 +336,7 @@ int what_is_cuda() {
     // can talk to the GPU driver but can't execute code on the GPU itself.
     //
     // we will talk about what exactly GPU bytecode is later on in these notes.
-    // befor anything else , let's look at a simple example of a CUDA kernel.
+    // before anything else , let's look at a simple example of a CUDA kernel.
     return 0;
 }
 
@@ -583,5 +584,90 @@ int cuda_driver_vs_runtime() {
 int intra_warp_communication() {
     // intra-warp communication is about threads communicating within the same
     // warp. intra means "within" itself.
+    return 0;
+}
+
+__global__ void gemm_1(int *A, int *B, int *C, size_t m, size_t q, size_t n) {
+    int idx = threadIdx.x;
+    C[idx] = 0;
+
+    // we want to get the dot product , so we need to know the column and row
+    // that we are at. note that idx = i * cols + j.
+    int i = idx / n;
+    int j = idx % n;
+
+    for (int k = 0; k < q; ++k) {
+        C[idx] += A[i * q + k] * B[k * n + j];
+    }
+}
+
+int gemm() {
+    // in this section , we will go through different implementations of general
+    // matrix multiplication (gemm) , starting with naive implementations ,
+    // slowly building our way up.
+
+    // we start by making the host buffers. all the matrices are flattened here.
+    // matrices are usually flattened in programs becuase of memory contiguity.
+    // better contiguity means better cache locality.
+
+    // small matrices. A in M(4, 2) , B in M(2, 3).
+    std::vector<int> h_As = random_vector(4 * 2, 0, 10);
+    std::vector<int> h_Bs = random_vector(2 * 3, 0, 10);
+    std::vector<int> h_Cs(12); // result is 4 * 3 = 12
+
+    // big matrices. A in M(8000, 6000) , B in M(6000, 7000).
+    std::cout << "generating big matrices..." << std::endl;
+    std::vector<int> h_Ab = random_vector(8000 * 6000, 0, 10);
+    std::vector<int> h_Bb = random_vector(6000 * 7000, 0, 10);
+    std::vector<int> h_Cb(8000 * 7000);
+    std::cout << "done" << std::endl;
+
+    // we are going to have some small matrices to just check our results , and
+    // big matrices to measure performance.
+
+    // device buffers
+    int *d_As;
+    int *d_Bs;
+    int *d_Cs;
+    int *d_Ab;
+    int *d_Bb;
+    int *d_Cb;
+
+    // allocate device buffers
+    cudaMalloc(&d_As, 4 * 2 * sizeof(int));
+    cudaMalloc(&d_Bs, 2 * 3 * sizeof(int));
+    cudaMalloc(&d_Cs, 4 * 3 * sizeof(int));
+    cudaMalloc(&d_Ab, 8000 * 6000 * sizeof(int));
+    cudaMalloc(&d_Bb, 6000 * 7000 * sizeof(int));
+    cudaMalloc(&d_Cb, 8000 * 7000 * sizeof(int));
+
+    // copy data to device buffers
+    cudaMemcpy(d_As, h_As.data(), 4 * 2 * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_Bs, h_Bs.data(), 2 * 3 * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_Ab, h_Ab.data(), 8000 * 6000 * sizeof(int),
+               cudaMemcpyHostToDevice);
+    cudaMemcpy(d_Bb, h_Bb.data(), 6000 * 7000 * sizeof(int),
+               cudaMemcpyHostToDevice);
+
+    // now let's run our first naive gemm: gemm1. this gemm will have only one
+    // block of dimensions 1 x sizeof(C).
+
+    // small test
+    gemm_1<<<1, h_Cs.size()>>>(d_As, d_Bs, d_Cs, 4, 2, 3);
+    cudaMemcpy(h_Cs.data(), d_Cs, 4 * 3 * sizeof(int), cudaMemcpyDeviceToHost);
+
+    // take a look at our small matrices
+    std::cout << "A = " << print_matrix(h_As, 4, 2) << std::endl;
+    std::cout << "B = " << print_matrix(h_Bs, 2, 3) << std::endl;
+    std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << std::endl;
+
+    // free device memory
+    cudaFree(d_As);
+    cudaFree(d_Bs);
+    cudaFree(d_Cs);
+    cudaFree(d_Ab);
+    cudaFree(d_Bb);
+    cudaFree(d_Cb);
+
     return 0;
 }
