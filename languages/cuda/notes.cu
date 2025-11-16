@@ -601,6 +601,21 @@ __global__ void gemm_1(int *A, int *B, int *C, size_t m, size_t q, size_t n) {
     }
 }
 
+__global__ void gemm_2(int *A, int *B, int *C, size_t q) {
+    size_t n = blockDim.x;
+
+    // we no longer need division or modulo , the indices can be inferred from
+    // the thread index we are on.
+    size_t j = threadIdx.x;
+    size_t i = threadIdx.y;
+    int idx = i * n + j;
+    C[idx] = 0;
+
+    for (int k = 0; k < q; ++k) {
+        C[idx] += A[i * q + k] * B[k * n + j];
+    }
+}
+
 int gemm() {
     // in this section , we will go through different implementations of general
     // matrix multiplication (gemm) , starting with naive implementations ,
@@ -620,7 +635,7 @@ int gemm() {
     std::vector<int> h_Ab = random_vector(8000 * 6000, 0, 10);
     std::vector<int> h_Bb = random_vector(6000 * 7000, 0, 10);
     std::vector<int> h_Cb(8000 * 7000);
-    std::cout << "done" << std::endl;
+    std::cout << "done\n" << std::endl;
 
     // we are going to have some small matrices to just check our results , and
     // big matrices to measure performance.
@@ -649,17 +664,90 @@ int gemm() {
     cudaMemcpy(d_Bb, h_Bb.data(), 6000 * 7000 * sizeof(int),
                cudaMemcpyHostToDevice);
 
+    // ================================= GEMM1 =================================
     // now let's run our first naive gemm: gemm1. this gemm will have only one
     // block of dimensions 1 x sizeof(C).
+    //
+    // so each thread index (x) corresponds directly to a flattenend index
+    // inside the output matrix C.
 
     // small test
     gemm_1<<<1, h_Cs.size()>>>(d_As, d_Bs, d_Cs, 4, 2, 3);
     cudaMemcpy(h_Cs.data(), d_Cs, 4 * 3 * sizeof(int), cudaMemcpyDeviceToHost);
 
+    // check if we got any errors
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("Kernel launch failed: %s\n", cudaGetErrorString(err));
+    }
+    // we should not get any errors !
+
     // take a look at our small matrices
+    std::cout << "gemm1 results for small matrices: " << std::endl;
     std::cout << "A = " << print_matrix(h_As, 4, 2) << std::endl;
     std::cout << "B = " << print_matrix(h_Bs, 2, 3) << std::endl;
-    std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << std::endl;
+    std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
+
+    // as you can see above , this works fine but this implementation has many
+    // issues.
+    //
+    // 1. first of all , a block can only have a limited amount of threads
+    //    (usually 1024 but depends on architecture). so we can only compute the
+    //    first 1024 elements of our matrix C.
+    //
+    // 2. second of all , since the only information about the index we have is
+    //    the flattenend index , we need to perform division and modulo to get
+    //    i and j. we need i and j in order to properly calculated the dot prod
+    //    between the i'th row and j'th column for each entry C_ij. this is an
+    //    INFORMATION RECOVERY PROBLEM.. we want to go from 1D to 2D. the issue
+    //    with this is that division and modulo are very slow operations and kill
+    //    GPU performance.
+
+    // let's see what happens when we launch our kernel with the larger matrices
+    gemm_1<<<1, h_Cb.size()>>>(d_Ab, d_Bb, d_Cb, 8000, 6000, 7000);
+
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm1 kernel launch failed for big matrices: %s\n\n",
+               cudaGetErrorString(err));
+    }
+    // we should get an "invalid configuration argument" because h_Cb.size() is
+    // 7000 * 8000 which far exceeds the max threads a block can have.
+
+    // ================================= GEMM2 =================================
+    // in the this approach , instead of having only 1 block with a flattenend
+    // list of threads , we will have 1 block of (m x n) threads. this will
+    // allow us to avoid division and modulo.
+
+    // we test on the small matrices again. let's zero out h_Cs to start clean.
+    std::fill(h_Cs.begin(), h_Cs.end(), 0);
+
+    // this time we need a dim3 object because we are no longer making a 1D block
+    dim3 block(3, 4);
+    // our block shape will correspond exactly to our outupt matrix shape. this
+    // time , we do not need to pass in m = 4 and n = 3 becuase that info is
+    // already captured inside the block shape.
+    //
+    // blockDim.x should correspond to the number of columns of C , so 4. and
+    // blockDim.y should correspond to the number of rows of C , so 3.
+    gemm_2<<<1, block>>>(d_As, d_Bs, d_Cs, 2);
+    cudaMemcpy(h_Cs.data(), d_Cs, 4 * 3 * sizeof(int), cudaMemcpyDeviceToHost);
+
+    // check for any errors (we shouldn't get any)
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm2 kernel launch failed for small matrices: %s\n\n",
+               cudaGetErrorString(err));
+    }
+
+    // check the results
+    std::cout << "gemm2 results for small matrices: " << std::endl;
+    std::cout << "A = " << print_matrix(h_As, 4, 2) << std::endl;
+    std::cout << "B = " << print_matrix(h_Bs, 2, 3) << std::endl;
+    std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
+
+    // but we are still only using one block! this limits the matrix size we can
+    // handle. again , we get an error when trying larger blocks.
 
     // free device memory
     cudaFree(d_As);
