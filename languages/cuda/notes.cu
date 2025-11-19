@@ -389,7 +389,7 @@ int simple_example() {
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
         std::cout << "Kernel launch error: " << cudaGetErrorString(err)
-            << std::endl;
+                  << std::endl;
     }
 
     // wait for kernel to finish
@@ -399,7 +399,7 @@ int simple_example() {
     err = cudaGetLastError();
     if (err != cudaSuccess) {
         std::cout << "Kernel execution error: " << cudaGetErrorString(err)
-            << std::endl;
+                  << std::endl;
     }
 
     // copy the result from device buffer back to host buffer
@@ -412,7 +412,7 @@ int simple_example() {
 
     // take a look at the results
     std::cout << vector_head(h_a) << " + " << vector_head(h_b) << " = "
-        << vector_head(h_c) << std::endl;
+              << vector_head(h_c) << std::endl;
 
     // as you may have noticed , we needed to do lots of things in this current
     // funciton as well. in fact , for this particular example , we had much
@@ -435,7 +435,8 @@ int what_are_drivers() {
     //  - register writes
     //  - DMA operations
     //
-    // the driver's job is to map the OS' requests to actual hardware operations.
+    // the driver's job is to map the OS' requests to actual hardware
+    // operations.
     //
     // so a driver is a the piece of software that allows the OS to use a
     // specific of hardware , without requiring the OS to know its internal
@@ -484,11 +485,11 @@ int what_are_drivers() {
     //  in kernel space , we don't have exceptions: if an exception is thrown ,
     //  it crashes the entire system. we do not have dynamic allocators like
     //  malloc() either , and instead have to use special allocators like
-    //  kmalloc(). C makes it very obvious when you're doing something that might
-    //  not work in kernel space.
+    //  kmalloc(). C makes it very obvious when you're doing something that
+    //  might not work in kernel space.
     //
-    //  we won't actually talk about kernel driver programming though. instead we
-    //  now focus on gpu drivers.
+    //  we won't actually talk about kernel driver programming though. instead
+    //  we now focus on gpu drivers.
     return 0;
 }
 
@@ -544,8 +545,8 @@ int gpu_drivers() {
     // KERNEL SPACE DRIVER
     //
     // talks directly to the hardware registers via PCIe (peripherical component
-    // interconnect express)--a high speed serial bus that connect the GPU to the
-    // motherboard and CPU.
+    // interconnect express)--a high speed serial bus that connect the GPU to
+    // the motherboard and CPU.
     //
     // this driver handles:
     //  1. GPU memory allocation
@@ -738,8 +739,8 @@ int gemm() {
     //    i and j. we need i and j in order to properly calculated the dot prod
     //    between the i'th row and j'th column for each entry C_ij. this is an
     //    INFORMATION RECOVERY PROBLEM.. we want to go from 1D to 2D. the issue
-    //    with this is that division and modulo are very slow operations and kill
-    //    GPU performance.
+    //    with this is that division and modulo are very slow operations and
+    //    kill GPU performance.
 
     // let's see what happens when we launch our kernel with the larger matrices
     gemm_1<<<1, h_Cb.size()>>>(d_Ab, d_Bb, d_Cb, 8000, 6000, 7000);
@@ -760,7 +761,8 @@ int gemm() {
     // we test on the small matrices again. let's zero out d_Cs to start clean.
     cudaMemset(d_Cs, 0, h_Cs.size() * sizeof(int));
 
-    // this time we need a dim3 object because we are no longer making a 1D block
+    // this time we need a dim3 object because we are no longer making a 1D
+    // block
     dim3 block_2s(3, 4);
     // our block shape will correspond exactly to our outupt matrix shape. this
     // time , we do not need to pass in m = 4 and n = 3 becuase that info is
@@ -832,9 +834,13 @@ int gemm() {
     // same.
 
     cudaMemset(d_Cs, 0, h_Cs.size() * sizeof(int));
+
+    // pass 4 instead of dim3(1, 4) object
     gemm_3_2<<<4, 3>>>(d_As, d_Bs, d_Cs, 2);
     cudaMemcpy(h_Cs.data(), d_Cs, h_Cs.size() * sizeof(int),
                cudaMemcpyDeviceToHost);
+
+    // of course this has no affect on the actual effiency of the algorithm
 
     // should get no errors
     err = cudaGetLastError();
