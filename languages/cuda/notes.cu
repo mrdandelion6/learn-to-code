@@ -587,6 +587,7 @@ int intra_warp_communication() {
     return 0;
 }
 
+// block(m * n) , grid(1)
 __global__ void gemm_1(int *A, int *B, int *C, size_t m, size_t q, size_t n) {
     int idx = threadIdx.x;
     C[idx] = 0;
@@ -601,6 +602,7 @@ __global__ void gemm_1(int *A, int *B, int *C, size_t m, size_t q, size_t n) {
     }
 }
 
+// block(m, n) , grid(1)
 __global__ void gemm_2(int *A, int *B, int *C, size_t q) {
     size_t n = blockDim.x;
 
@@ -609,8 +611,38 @@ __global__ void gemm_2(int *A, int *B, int *C, size_t q) {
     size_t j = threadIdx.x;
     size_t i = threadIdx.y;
     int idx = i * n + j;
-    C[idx] = 0;
 
+    C[idx] = 0;
+    for (int k = 0; k < q; ++k) {
+        C[idx] += A[i * q + k] * B[k * n + j];
+    }
+}
+
+// block(n) , grid(m)
+__global__ void gemm_3(int *A, int *B, int *C, size_t q) {
+    size_t n = blockDim.x;
+
+    size_t j = threadIdx.x;
+    size_t i = blockIdx.y;
+    int idx = i * n + j;
+
+    C[idx] = 0;
+    for (int k = 0; k < q; ++k) {
+        C[idx] += A[i * q + k] * B[k * n + j];
+    }
+}
+
+// block(n) , grid(m)
+__global__ void gemm_3_2(int *A, int *B, int *C, size_t q) {
+    size_t n = blockDim.x;
+    size_t j = threadIdx.x;
+
+    // the blocks are along the x axis of the grid now , everything else is the
+    // exact same
+    size_t i = blockIdx.x;
+    int idx = i * n + j;
+
+    C[idx] = 0;
     for (int k = 0; k < q; ++k) {
         C[idx] += A[i * q + k] * B[k * n + j];
     }
@@ -629,6 +661,11 @@ int gemm() {
     std::vector<int> h_As = random_vector(4 * 2, 0, 10);
     std::vector<int> h_Bs = random_vector(2 * 3, 0, 10);
     std::vector<int> h_Cs(12); // result is 4 * 3 = 12
+
+    // take a look at our small matrices
+    std::cout << "small matrices generated:\n";
+    std::cout << "A = " << print_matrix(h_As, 4, 2) << std::endl;
+    std::cout << "B = " << print_matrix(h_Bs, 2, 3) << "\n" << std::endl;
 
     // big matrices. A in M(8000, 6000) , B in M(6000, 7000).
     std::cout << "generating big matrices..." << std::endl;
@@ -657,11 +694,13 @@ int gemm() {
     cudaMalloc(&d_Cb, 8000 * 7000 * sizeof(int));
 
     // copy data to device buffers
-    cudaMemcpy(d_As, h_As.data(), 4 * 2 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_Bs, h_Bs.data(), 2 * 3 * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_Ab, h_Ab.data(), 8000 * 6000 * sizeof(int),
+    cudaMemcpy(d_As, h_As.data(), h_As.size() * sizeof(int),
                cudaMemcpyHostToDevice);
-    cudaMemcpy(d_Bb, h_Bb.data(), 6000 * 7000 * sizeof(int),
+    cudaMemcpy(d_Bs, h_Bs.data(), h_Bs.size() * sizeof(int),
+               cudaMemcpyHostToDevice);
+    cudaMemcpy(d_Ab, h_Ab.data(), h_Ab.size() * sizeof(int),
+               cudaMemcpyHostToDevice);
+    cudaMemcpy(d_Bb, h_Bb.data(), h_Bb.size() * sizeof(int),
                cudaMemcpyHostToDevice);
 
     // ================================= GEMM1 =================================
@@ -673,7 +712,8 @@ int gemm() {
 
     // small test
     gemm_1<<<1, h_Cs.size()>>>(d_As, d_Bs, d_Cs, 4, 2, 3);
-    cudaMemcpy(h_Cs.data(), d_Cs, 4 * 3 * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_Cs.data(), d_Cs, h_Cs.size() * sizeof(int),
+               cudaMemcpyDeviceToHost);
 
     // check if we got any errors
     cudaError_t err = cudaGetLastError();
@@ -684,8 +724,6 @@ int gemm() {
 
     // take a look at our small matrices
     std::cout << "gemm1 results for small matrices: " << std::endl;
-    std::cout << "A = " << print_matrix(h_As, 4, 2) << std::endl;
-    std::cout << "B = " << print_matrix(h_Bs, 2, 3) << std::endl;
     std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
 
     // as you can see above , this works fine but this implementation has many
@@ -719,19 +757,20 @@ int gemm() {
     // list of threads , we will have 1 block of (m x n) threads. this will
     // allow us to avoid division and modulo.
 
-    // we test on the small matrices again. let's zero out h_Cs to start clean.
-    std::fill(h_Cs.begin(), h_Cs.end(), 0);
+    // we test on the small matrices again. let's zero out d_Cs to start clean.
+    cudaMemset(d_Cs, 0, h_Cs.size() * sizeof(int));
 
     // this time we need a dim3 object because we are no longer making a 1D block
-    dim3 block(3, 4);
+    dim3 block_2s(3, 4);
     // our block shape will correspond exactly to our outupt matrix shape. this
     // time , we do not need to pass in m = 4 and n = 3 becuase that info is
     // already captured inside the block shape.
     //
     // blockDim.x should correspond to the number of columns of C , so 4. and
     // blockDim.y should correspond to the number of rows of C , so 3.
-    gemm_2<<<1, block>>>(d_As, d_Bs, d_Cs, 2);
-    cudaMemcpy(h_Cs.data(), d_Cs, 4 * 3 * sizeof(int), cudaMemcpyDeviceToHost);
+    gemm_2<<<1, block_2s>>>(d_As, d_Bs, d_Cs, 2);
+    cudaMemcpy(h_Cs.data(), d_Cs, h_Cs.size() * sizeof(int),
+               cudaMemcpyDeviceToHost);
 
     // check for any errors (we shouldn't get any)
     err = cudaGetLastError();
@@ -742,12 +781,71 @@ int gemm() {
 
     // check the results
     std::cout << "gemm2 results for small matrices: " << std::endl;
-    std::cout << "A = " << print_matrix(h_As, 4, 2) << std::endl;
-    std::cout << "B = " << print_matrix(h_Bs, 2, 3) << std::endl;
     std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
 
     // but we are still only using one block! this limits the matrix size we can
     // handle. again , we get an error when trying larger blocks.
+    dim3 block_2b(7000, 8000);
+    gemm_2<<<1, block_2b>>>(d_Ab, d_Bb, d_Cb, 2);
+
+    // should get an error
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm2 kernel launch failed for big matrices: %s\n\n",
+               cudaGetErrorString(err));
+    }
+
+    // reset the device buffers for the next gemms
+    cudaMemset(d_Cs, 0, h_Cs.size() * sizeof(int));
+    cudaMemset(d_Cb, 0, h_Cb.size() * sizeof(int));
+
+    // ================================= GEMM3 =================================
+    // in this gemm , we will move away from just using one block for the entire
+    // matrix. what if we used one block for every row of the output matrix ?
+    // this would give us much more flexibility with size constraints.
+
+    // our block should be one dimensional , corresponding to the number of cols
+    // (n) that we have. similarly our grid is one dimensional.. we would just
+    // have a column vector of blocks. the number of blocks we have is just the
+    // number of rows (m) of the output matrix.
+    dim3 grid_3s(1, 4);
+    gemm_3<<<grid_3s, 3>>>(d_As, d_Bs, d_Cs, 2);
+    cudaMemcpy(h_Cs.data(), d_Cs, h_Cs.size() * sizeof(int),
+               cudaMemcpyDeviceToHost);
+
+    // shouldn't get any errors , but we always check !
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm3 kernel launch failed for small matrices: %s\n\n",
+               cudaGetErrorString(err));
+    }
+
+    // check the results
+    std::cout << "gemm3 results for small matrices: " << std::endl;
+    std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
+
+    // or if we wanted to make it even simpler , we can avoid using a dim3 for
+    // the grid. since it's a 1 by 4 , we can just instead have it be a 4 by 1
+    // which is just a single dimension. that means we can just use the int 4
+    // in the kernel chevrons. instead of having the grid as a column vector of
+    // blocks , we can have it as a row vector and everything else would be the
+    // same.
+
+    cudaMemset(d_Cs, 0, h_Cs.size() * sizeof(int));
+    gemm_3_2<<<4, 3>>>(d_As, d_Bs, d_Cs, 2);
+    cudaMemcpy(h_Cs.data(), d_Cs, h_Cs.size() * sizeof(int),
+               cudaMemcpyDeviceToHost);
+
+    // should get no errors
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm3_2 kernel launch failed for small matrices: %s\n\n",
+               cudaGetErrorString(err));
+    }
+
+    // check the results
+    std::cout << "gemm3_2 results for small matrices: " << std::endl;
+    std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
 
     // free device memory
     cudaFree(d_As);
