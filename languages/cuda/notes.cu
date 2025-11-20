@@ -307,6 +307,14 @@ int main() {
 int getting_started() {
     // in order to compile and run these notes , you need an NVIDIA GPU and CUDA
     // properly installed on your machine. you can find some guides in setup/
+    //
+    // the guides in setup/ show using the following alias:
+    //
+    //   alias nv='nvcc -ccbin g++-14 -arch=sm_61 -Wno-deprecated-gpu-targets'
+    //
+    // edit it with the g++ and arch of your corresponding setup. unless any
+    // section in my notes specify otherwise , assume this is the command you
+    // should use to run stuff.
     return 0;
 }
 
@@ -649,6 +657,7 @@ __global__ void gemm_3_2(int *A, int *B, int *C, size_t q) {
     }
 }
 
+// block(1024) , grid(m)
 __global__ void gemm_4(int *A, int *B, int *C, size_t n, size_t q) {
     size_t i = blockIdx.x;
 
@@ -660,6 +669,23 @@ __global__ void gemm_4(int *A, int *B, int *C, size_t n, size_t q) {
         for (int k = 0; k < q; ++k) {
             C[i * n + j] += A[i * q + k] * B[k * n + j];
         }
+    }
+}
+
+// block(1024) , grid(m)
+__global__ void gemm_5(int *A, int *B, int *C, size_t n, size_t q) {
+    size_t i = blockIdx.x;
+
+    for (size_t j = threadIdx.x; j < n; j += blockDim.x) {
+        // keep a rolling sum
+        int sum = 0;
+
+        for (int k = 0; k < q; ++k) {
+            sum += A[i * q + k] * B[k * n + j];
+        }
+
+        // just write to global memory once
+        C[i * n + j] = sum;
     }
 }
 
@@ -905,20 +931,92 @@ int gemm() {
     std::cout << "gemm4 results for small matrices: " << std::endl;
     std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
 
-    // now we do a computation for our big matrices
+    // now we do a computation for our big matrices. we will use cuda events
+    // from now on to time the execution speed of our kernels for big matrices.
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cudaEventRecord(start);
     gemm_4<<<8000, 1024>>>(d_Ab, d_Bb, d_Cb, 7000, 6000);
+    cudaEventRecord(stop);
+
     cudaMemcpy(h_Cb.data(), d_Cb, h_Cb.size() * sizeof(int),
                cudaMemcpyDeviceToHost);
     // the max number of threads we can have on a block is usually 1024. that is
     // what it is for my 1080ti anyway. this will spawn 8000 blocks with 1024
     // threads each. then each thread will do about 7000 / 1024 dot products.
 
-    // shouldn't get any errors , but we always check !
     err = cudaGetLastError();
     if (err != cudaSuccess) {
         printf("gemm4 kernel launch failed for big matrices: %s\n\n",
                cudaGetErrorString(err));
-    }
+    } // shouldn't get any errors
+
+    // get the time
+    float time_ms;
+    cudaEventElapsedTime(&time_ms, start, stop);
+
+    // we can check to see that every element of h_Cb was calculated. let's peak
+    // at the last element to make sure it's nonzero.
+    std::cout << "gemm4 calculation for big matrices finished in " << time_ms
+              << " ms" << std::endl;
+    std::cout << "h_Cb[" << h_Cb.size() - 1 << "] is: " << h_Cb[h_Cb.size() - 1]
+              << "\n"
+              << std::endl;
+
+    // reset the device buffers for the next gemms
+    cudaMemset(d_Cs, 0, h_Cs.size() * sizeof(int));
+    cudaMemset(d_Cb, 0, h_Cb.size() * sizeof(int));
+
+    // ================================= GEMM5 =================================
+    // note that our matrices d_Ab , d_Bb , and d_Cb all live in the gpu global
+    // memory. so each time we do C[i * n + j] += A[i * q + k] * B[k * n + j] ,
+    // we are accessing global memory , and writing to it which is slow. we can
+    // instead keep a rolling sum of our dot product that we accumulate by
+    // accessing only A[] and B[] , then do one final write. we implement this
+    // in gemm5.
+
+    cudaEventRecord(start);
+    gemm_5<<<8000, 1024>>>(d_Ab, d_Bb, d_Cb, 7000, 6000);
+    cudaEventRecord(stop);
+
+    cudaMemcpy(h_Cb.data(), d_Cb, h_Cb.size() * sizeof(int),
+               cudaMemcpyDeviceToHost);
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm5 kernel launch failed for big matrices: %s\n\n",
+               cudaGetErrorString(err));
+    } // shouldn't get any errors
+
+    cudaEventElapsedTime(&time_ms, start, stop);
+    std::cout << "gemm5 calculation for big matrices finished in " << time_ms
+              << " ms" << std::endl;
+    std::cout << "h_Cb[" << h_Cb.size() - 1 << "] is: " << h_Cb[h_Cb.size() - 1]
+              << "\n"
+              << std::endl;
+
+    // but what you end up seeing is that the time is pretty much the same ! the
+    // reason for this is because of compiler optimizations. in fact our entire
+    // code is heavily optimizes by the compiler. to see the affect of gemm5 you
+    // can disable compiler optimizations by adding the flags: -O0 -G.
+    //
+    // note that the calculations will take much longer to run now. for
+    // reference , here were my results:
+    /**
+    gemm4 calculation for big matrices finished in 158563 ms
+    h_Cb[55999999] is: 144648
+
+    gemm5 calculation for big matrices finished in 106600 ms
+    h_Cb[55999999] is: 144648
+    */
+    // before adding the -O0 flag , i was getting around 5000 ms on my 1080ti.
+    // now gemm4 is 158 seconds , and gemm4 is 106 seconds. but that's still a
+    // massive speedup from gemm4 to gemm5 !
+    //
+    // that being said , compiler optimizations are the practical assumptions ,
+    // even for bench marking. so we will not ever really be compiling and
+    // testing code with them disabled.
 
     // free device memory
     cudaFree(d_As);
