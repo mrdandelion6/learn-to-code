@@ -649,6 +649,20 @@ __global__ void gemm_3_2(int *A, int *B, int *C, size_t q) {
     }
 }
 
+__global__ void gemm_4(int *A, int *B, int *C, size_t n, size_t q) {
+    size_t i = blockIdx.x;
+
+    // calculate the dot product for many indices. stride through the row. this
+    // time , threads don't correspond to only one column's entry.
+    for (size_t j = threadIdx.x; j < n; j += blockDim.x) {
+        C[i * n + j] = 0;
+        // compute the dot product
+        for (int k = 0; k < q; ++k) {
+            C[i * n + j] += A[i * q + k] * B[k * n + j];
+        }
+    }
+}
+
 int gemm() {
     // in this section , we will go through different implementations of general
     // matrix multiplication (gemm) , starting with naive implementations ,
@@ -840,7 +854,8 @@ int gemm() {
     cudaMemcpy(h_Cs.data(), d_Cs, h_Cs.size() * sizeof(int),
                cudaMemcpyDeviceToHost);
 
-    // of course this has no affect on the actual effiency of the algorithm
+    // of course this has no affect on the actual effiency of the algorithm. it
+    // is just a demonstration of different designs we can do.
 
     // should get no errors
     err = cudaGetLastError();
@@ -852,6 +867,58 @@ int gemm() {
     // check the results
     std::cout << "gemm3_2 results for small matrices: " << std::endl;
     std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
+
+    // reset the device buffers for the next gemms
+    cudaMemset(d_Cs, 0, h_Cs.size() * sizeof(int));
+    cudaMemset(d_Cb, 0, h_Cb.size() * sizeof(int));
+
+    // ================================= GEMM4 =================================
+    // notice that our gemm3 kernels still has the issue of martrix row size
+    // being limited by max number of threads in a block
+    //
+    // we will now deal with the this issue in gemm4. so far we have been
+    // assigning threads to elements in a 1 to 1 fashion. but of course this
+    // means when the number of elements overtakes the number of max threads
+    // allowed in a block , we cannot compute that. to get around this , we
+    // assign more work to each of the threads.
+    //
+    // each thread strides through the row it is on and computes many dot
+    // products now. this naive gemm now lets us compute matrix multiplication
+    // of any size. note that this means blockDim.x no longer corresponds to the
+    // numbers of columns we have. hence we must pass in this information as an
+    // additional parameter.
+
+    // let's just take a look at the small matrices first to see if our logic
+    // seems to still be correct.
+    gemm_4<<<4, 3>>>(d_As, d_Bs, d_Cs, 3, 2);
+    cudaMemcpy(h_Cs.data(), d_Cs, h_Cs.size() * sizeof(int),
+               cudaMemcpyDeviceToHost);
+
+    // shouldn't get any errors , but we always check !
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm4 kernel launch failed for small matrices: %s\n\n",
+               cudaGetErrorString(err));
+    }
+
+    // check the results
+    std::cout << "gemm4 results for small matrices: " << std::endl;
+    std::cout << "A * B = " << print_matrix(h_Cs, 4, 3) << "\n" << std::endl;
+
+    // now we do a computation for our big matrices
+    gemm_4<<<8000, 1024>>>(d_Ab, d_Bb, d_Cb, 7000, 6000);
+    cudaMemcpy(h_Cb.data(), d_Cb, h_Cb.size() * sizeof(int),
+               cudaMemcpyDeviceToHost);
+    // the max number of threads we can have on a block is usually 1024. that is
+    // what it is for my 1080ti anyway. this will spawn 8000 blocks with 1024
+    // threads each. then each thread will do about 7000 / 1024 dot products.
+
+    // shouldn't get any errors , but we always check !
+    err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("gemm4 kernel launch failed for big matrices: %s\n\n",
+               cudaGetErrorString(err));
+    }
 
     // free device memory
     cudaFree(d_As);
