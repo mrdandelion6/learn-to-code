@@ -2201,7 +2201,7 @@ int lambda_functions() {
 
     // for example
     int x = 69;
-    auto foo = [x](int a) -> int {return x + a; };
+    auto foo = [x](int a) -> int { return x + a; };
     // here , foo gets its own copy of x baked into the lambda object. think of the lambda object as adopting
     // a constant with the value x. in this case u can almost imagine that x is some non-mutable field of the lambda.
 
@@ -5015,6 +5015,72 @@ int templates() {
     // forwarding , variadic templates , traits and policies , and so on. since
     // the list of topics is so broad , we will spread them out into many
     // sections.
+
+    return 0;
+}
+
+int restrict_keyword() {
+    // __restrict__ is compiler keyword. it is a pointer "qualifier" that tells
+    // the compiler "i promise this pointer is the only way to access the object
+    // it points to during its lifetime". in other words , you are guaranteeing
+    // no aliasing: no other pointer will access the same memory.
+
+    // with this guarantee , the compiler can enable aggressive optimizations:
+    // - vectorization (SIMD)
+    // - reordering operartions
+    // - keeping things in registers
+
+    // here is an example
+    auto add_arrays = [](int* __restrict__ A,
+                         int* __restrict__ B,
+                         int* __restrict__ C,
+                         size_t n) -> void {
+        for (int i = 0; i < n; ++i) {
+            C[i] = A[i] + B[i];
+        }
+    };
+
+    // let's make some arrays
+    int n = 100;
+    std::vector<int> arr_1(n);
+    std::vector<int> arr_2(n);
+    std::vector<int> arr_3(n);
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(1, 100);
+
+    std::generate(arr_1.begin(), arr_1.end(), [&]() { return dist(gen); });
+
+    // __restrict__ can appear in three different variants depending on the targetted
+    // compiler:
+    // 1. restrict
+    // 2. __restrict__
+    // 3. __restrict
+
+    // the above all do the same thing , but only work for certain compilers.
+    // restrict works for C99 standard , __restrict__ works for all GCC / Clang
+    // , and __restrict works for MVSC only.
+
+    // (1) restrict:
+    // the first one , restrict , is not a standard C keyword since C99. C99 is
+    // 1999 version of C , just like how C++17 means 2017 version of C. restrict
+    // may be part of C99 and beyond , but it is not part of any C++ standard.
+    // some C++ compilers may accept it , but it's bad practice to use in C++ as
+    // it may conflict with user code that uses restrict as a variable /
+    // function name. it is fine to use this for C code that follows C99 
+    // standard and beyond , but it is risky to use it with C++ code. MVSC in
+    // particular does not accept it. GCC for C++ standards might.
+
+    // (2) __restrict__:
+    // __restrict__ is a GCC / Clang compiler reserved identifier. the double
+    // underscores mean it's in the compiler's namespace. it is safe to use in
+    // C++ because it won't conflict with user code. it works for both C and C++
+    // code reliably for C and C++ standard compiled by GCC. it does not work
+    // for MVSC.
+
+    // (3) __restrict:
+    // the same as (2) but works for MVSC instead of GCC.
 
     return 0;
 }
