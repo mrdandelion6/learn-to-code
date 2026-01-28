@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <random>
 #include <type_traits>
 #include <ios>
 #include <iostream>
@@ -200,6 +201,10 @@ int link_time_optimization();
 int optimization_levels();
 int when_optimizations_fail();
 
+// COMPILER EXTENSIONS
+int compiler_extensions_overview();
+int builtins();
+
 // STREAM I/O
 int stream_io();
 int stream_classes();
@@ -220,7 +225,7 @@ int fast_cpp_csv_parser();
 
 int main() {
     // RUN
-    templates();
+    compiler_extensions_overview();
     return 0;
 }
 
@@ -5015,6 +5020,83 @@ int templates() {
     // forwarding , variadic templates , traits and policies , and so on. since
     // the list of topics is so broad , we will spread them out into many
     // sections.
+
+    return 0;
+}
+
+int compiler_extensions_overview() {
+    // compiler extensions are features that specific compilers add beyond what
+    // the standard requires. different compilers have different extensions.
+
+    // WHY THEY EXIST ?
+    // there are many uses for compiler extensions:
+    // 1. hardware-specific features
+    // 2. performance optimization
+    // 3. platform-specific needs
+    // 4. fill gaps before standardization
+
+    // TYPES OF COMPILER EXTENSIONS
+    // - builtins
+    // - attributes
+    // - extended keywords
+    // - pragmas
+    // - inline assembly (__asm__)
+
+    // (1) HARDWARE-SPECIFIC FEATURES
+    // different hardware has special capabilities that standard C++ doesn't
+    // know about , but the compiler can determine. remember that the compiler
+    // is what makes machine code for specific hardwares.. so it knows about the
+    // machine it is targetting. below is an example.
+
+    int value = 9;
+    int count = 0;
+    for (int i = 0; i < sizeof(int); ++i) {
+        if (value & (1 << i)) {
+            count++;
+        }
+    }
+    // the loop above checks how many bits of the integer value are set to 1
+    // (32 bits total for ints).
+
+    // we can do this with special CPU instructions too.. no way to express this
+    // in standard C++ , we must talk to the compiler !
+    int count2 = __builtin_popcount(value);
+    // use the __builtin_popcount() intrinsic. this is fast !
+
+    std::cout << "count: " << count << std::endl;
+    std::cout << "count2: " << count2 << std::endl;
+
+    // (2) PERFORMANCE OPTIMIZATION
+    // as shown from the example above , compiler extensions allow for speedups
+    // in operations. another good example is given below:
+
+    int error = 0; // suppose error was determined at runtime.
+    if (__builtin_expect(error, 0)) {
+        std::cout << "handle error" << std::endl;
+    }
+    // here , doing __builtin_expect(error, 0) means , "hey CPU , the value of
+    // error is most likely going to be 0". this helps with more accurate branch
+    // prediction.
+
+
+    // (3) PLATFORM-SPECIFIC NEEDS
+
+    // (4) FILL GAPS BEFORE STANDARDIZATION
+
+    return 0;
+}
+
+int builtins() {
+    // buitins are a type of compiler extension. they mean literally "built
+    // into the compiler"--not provided by an external library. builtins have
+    // function-like syntax , but no actual function definition (since they are
+    // resolved by the compiler). so you can't "gd" them.
+
+    // we took a look at __builtin_expect and __builtin_popcount already. here
+    // are some more examples:
+
+    // literally grab return address from the call stack
+    void* ret = __builtin_return_address(0);
 
     return 0;
 }
