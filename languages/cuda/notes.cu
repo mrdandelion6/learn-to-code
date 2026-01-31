@@ -698,7 +698,7 @@ int nvcc_compiler_flags() {
                  -gencode arch=compute_90,code=compute_90 # PTX for future
     */
     //           this pattern lets us generate machine code for multiple GPUs
-    //           but we only embed PTX 90 for version architectures.
+    //           but we only embed PTX 90 for virtual architectures.
 
     return 0;
 }
