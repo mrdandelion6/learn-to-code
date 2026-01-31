@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <random>
 #include <type_traits>
 #include <ios>
 #include <iostream>
@@ -83,12 +84,12 @@ int expected();
 int views();
 
 // LANGUAGE FEATURES
+int forward_declarations();
 int chaining_assignments();
 int references();
 int range_based_for();
 int lvalues_rvalues();
 int aggregates();
-int macros();
 int deleted_functions();
 int lambda_functions();
 int namespaces();
@@ -97,11 +98,18 @@ int function_overloading();
 int exceptions();
 int exception_handling();
 int default_arguments();
-int pragma();
 int modules();
 int three_way_comparison();
 int designated_initializers();
 int uniform_initialization();
+
+// PREPROCESSOR DIRECTIVES
+int preprocessor_directives();
+int macros();
+int conditional_compilation_directives();
+int diagnostic_directives();
+int pragma_directive();
+int other_directives();
 
 // MEMORY AND RESOURCES
 int free_and_malloc_review();
@@ -141,23 +149,6 @@ int virtual_constructors_destructors();
 int functors();
 int templates();
 
-// KEYWORDS
-int auto_keyword();
-int nullptr_keyword();
-int inline_keyword();
-int static_keyword();
-int noexcept_keyword();
-int const_keyword();
-int constexpr_keyword();
-int explicit_keyword();
-int consteval_keyword();
-
-// COMPILER KEYWORDS
-int restrict_keyword();
-int attribute_keyword();
-int volatile_keyword();
-int device_and_global_keywords();
-
 // TEMPLATE METAPROGRAMMING & DESIGN PATTERNS
 int meta_templates();
 int perfect_forwarding();
@@ -172,6 +163,25 @@ int expression_templates();
 int mixins();
 int policy_based_design();
 int template_template_parameters();
+
+// KEYWORDS
+int auto_keyword();
+int nullptr_keyword();
+int inline_keyword();
+int static_keyword();
+int noexcept_keyword();
+int const_keyword();
+int constexpr_keyword();
+int explicit_keyword();
+int consteval_keyword();
+int volatile_keyword();
+
+// COMPILER EXTENSIONS
+int compiler_extensions_overview();
+int builtins();
+int restrict_keyword();
+int attribute_keyword();
+int device_and_global_keywords();
 
 // COMPILE-TIME PROGRAMMING
 int concepts();
@@ -220,7 +230,7 @@ int fast_cpp_csv_parser();
 
 int main() {
     // RUN
-    templates();
+    preprocessor_directives();
     return 0;
 }
 
@@ -599,6 +609,136 @@ int cmake() {
 
     // note that you do not add the build folder to your version control.
 
+    return 0;
+}
+
+int preprocessor_directives() {
+    // the C++ preprocessor is a text processing tool that runs before
+    // compilation. we can make use of this tool using preprocessor directives.
+    // preprocessor directives allow for us to manipulate our source code to
+    // produce a final version before the compiler parses it. directives start
+    // with a # , such as #define and #include
+
+    // DEFINE DIRECTIVE
+
+    #define COOL_MACRO_69 69
+
+    // a simple example is shown above , using the #define directive. this
+    // directive is used to define macros (more detail on this in the next
+    // section). macros are text replacements:
+
+    int num = 10 + COOL_MACRO_69;
+    std::cout << "num is: " << num << std::endl;
+
+    // we will now take a look at more directives. another directive is #undef
+    // which undefines macros:
+
+    // UNDEF DIRECTIVE
+
+    #undef COOL_MACRO_69
+
+    // uncommenting the following should yield an error
+    // num += COOL_MACRO_69;
+
+    // #include is probably the most familiar directive. it makes the
+    // preprocessor copy paste the entire file contents at the location we call
+    // it.
+
+    // this is what happens when we do #include file_name
+    // 1. opens file_name
+    // 2. reads its entire contents
+    // 3. replaces the #include line with the file's contents
+    // 4. continues preprocessing
+
+    // this is why we need to use INCLUDE GUARDS. if we end up accidentally
+    // including the same file twice , we will end up getting errors because of
+    // multiple definitions. example:
+    //
+    // #include "vector.h"
+    // #include "matrix.h"
+    //
+    // but in matrix.h , suppose we already did #include "vector.h". thus ,
+    // vector.h will end up being included twice in the main file. to prevent
+    // this we would add some include guards inside vector.h like so:
+
+    // inside vector.h:
+    #ifndef VECTOR_H
+    #define VECTOR_H
+
+    struct Example {
+        int x;
+    };
+
+    #endif
+
+    // IFDEF DIRECTIVES
+
+    // the above uses some if directives. #ifndef VECTOR_H evaluates to true if
+    // the VECTOR_H is not defined yet. if it is defined , then the preprocessor
+    // just removes everything that was closed by the if statment (up to #endif)
+
+    // note that #ifdef is another directive that evaluates to true if the macro
+    // is defined. also note that we can define macros without giving them
+    // values like we did for VECTOR_H. these are called empty macros. their
+    // main use is just conditional compilation with #ifdef and #ifndef like
+    // header guards.
+
+    // also note that including files inside of a functions and classes will
+    // likely to errors.. this is because everything from those files will
+    // literally just end up getting dumped inside the function.
+
+    // #include CRITICISMS
+    //
+    // you may have thought including the entire file's code when doing #include
+    // is overkill.. and you would be right. it can be very overkill. this is
+    // one of the biggest criticisms of C++'s include system.
+    //
+    // suppose you only want to use one function from a header , but this header
+    // is tens of thousands of lines long , and also includes several other
+    // files. for example <iostream> adds over 30,000 lines of code. now the
+    // compiler must compile all of this. maybe you just wanted to write a 5
+    // line hello world. an even worse example is <windows.h>. it pulls hundreds
+    // of thousands of lines of declarations for the entire windows API , even
+    // if we are only using one function.
+    //
+    // a good way to get around this is only using forward declarations in
+    // headers , to prevent chains of linking headers to more headers. what this
+    // means is , suppose headerX.h needs something from headerY.h , you would
+    // not include headerY.h inside headerX.h. instead you just use forward
+    // declarations , and include headers only in the source
+
+    // we will take look at more directives in the following sections
+    // - conditional_compilation_directives()
+    // - diagnostic_directives()
+    // - pragma_directive()
+    // - other_directives()
+    return 0;
+}
+
+int macros() {
+    // macros are preprocessor directives that perform text substitution before
+    // actual compilation begins. you may remember them from C. you make a macro
+    // using the #define preprocessor directive.
+    return 0;
+}
+
+int conditional_compilation_directives() {
+    // TODO: add notes
+    return 0;
+}
+
+int other_directives() {
+    // TODO:
+    // - #include_next
+    // - #line
+    // - # (null directive)
+    // - ##
+    // - stringification operator
+    return 0;
+}
+
+int forward_declarations() {
+    // TODO: add notes
     return 0;
 }
 
@@ -1936,11 +2076,6 @@ int aggregates() {
     return 0;
 }
 
-int macros() {
-    // TODO: make notes
-    return 0;
-}
-
 // some functions for the notes in deleted_functions() section.
 void bad_function(int a) = delete;
 void set_volume(int level) { std::cout << "volume set to " << level << std::endl; }
@@ -1948,8 +2083,8 @@ void set_volume(float) = delete;
 void set_volume(double) = delete;
 
 int deleted_functions() {
-    // a deleted function is one that is explicitly marked with `delete`. when
-    // you try to call a deleted function , the compiler will generate an error
+    // a deleted function is one that is explicitly set to `delete`. when you
+    // try to call a deleted function , the compiler will generate an error
     // instead of using it. for example , we have a deleted function right above
     // this section , `bad_function(int a)`.
 
@@ -1988,7 +2123,7 @@ int deleted_functions() {
     void processData(char*) = delete;
     void processData(const char*) = delete;
    */
-    // this forces only string usage.
+    // this forces only string usage and prevents unwanted conversions.
 
     // deleted functions are also used in member functions for classes. you can
     // delete copy and assignment and you can prevent type conversion. consider
@@ -2201,7 +2336,7 @@ int lambda_functions() {
 
     // for example
     int x = 69;
-    auto foo = [x](int a) -> int {return x + a; };
+    auto foo = [x](int a) -> int { return x + a; };
     // here , foo gets its own copy of x baked into the lambda object. think of the lambda object as adopting
     // a constant with the value x. in this case u can almost imagine that x is some non-mutable field of the lambda.
 
@@ -5015,6 +5150,155 @@ int templates() {
     // forwarding , variadic templates , traits and policies , and so on. since
     // the list of topics is so broad , we will spread them out into many
     // sections.
+
+    return 0;
+}
+
+int compiler_extensions_overview() {
+    // compiler extensions are keywords that allow specific compilers to add
+    // features which are beyond standard C++. different compilers have
+    // different extensions.
+
+    // the basic idea is you write some compiler extension like __attribute__ ,
+    // and the compiler parses that to compile machine code. this is different
+    // from preprocessor directives which are handled by the preprocessor and
+    // not the compiler.
+
+    // WHY THEY EXIST ?
+    // there are many uses for compiler extensions:
+    // 1. hardware-specific features
+    // 2. performance optimization
+    // 3. platform-specific needs
+    // 4. fill gaps before standardization
+
+    // TYPES OF COMPILER EXTENSIONS
+    // - builtins
+    // - attributes
+    // - extended keywords
+    // - pragmas
+    // - inline assembly (__asm__)
+
+    // (1) HARDWARE-SPECIFIC FEATURES
+    // different hardware has special capabilities that standard C++ doesn't
+    // know about , but the compiler can determine. remember that the compiler
+    // is what makes machine code for specific hardwares.. so it knows about the
+    // machine it is targetting. below is an example.
+
+    int value = 9;
+    int count = 0;
+    for (int i = 0; i < sizeof(int); ++i) {
+        if (value & (1 << i)) {
+            count++;
+        }
+    }
+    // the loop above checks how many bits of the integer value are set to 1
+    // (32 bits total for ints).
+
+    // we can do this with special CPU instructions too.. no way to express this
+    // in standard C++ , we must talk to the compiler !
+    int count2 = __builtin_popcount(value);
+    // use the __builtin_popcount() intrinsic. this is fast !
+
+    std::cout << "count: " << count << std::endl;
+    std::cout << "count2: " << count2 << std::endl;
+
+    // (2) PERFORMANCE OPTIMIZATION
+    // as shown from the example above , compiler extensions allow for speedups
+    // in operations. another good example is given below:
+
+    int error = 0; // suppose error was determined at runtime.
+    if (__builtin_expect(error, 0)) {
+        std::cout << "handle error" << std::endl;
+    }
+    // here , doing __builtin_expect(error, 0) means , "hey CPU , the value of
+    // error is most likely going to be 0". this helps with more accurate branch
+    // prediction.
+
+
+    // (3) PLATFORM-SPECIFIC NEEDS
+
+    // (4) FILL GAPS BEFORE STANDARDIZATION
+
+    return 0;
+}
+
+int builtins() {
+    // buitins are a type of compiler extension. they mean literally "built
+    // into the compiler"--not provided by an external library. builtins have
+    // function-like syntax , but no actual function definition (since they are
+    // resolved by the compiler). so you can't "gd" them.
+
+    // we took a look at __builtin_expect and __builtin_popcount already. here
+    // are some more examples:
+
+    // literally grab return address from the call stack
+    void* ret = __builtin_return_address(0);
+
+    return 0;
+}
+
+int restrict_keyword() {
+    // __restrict__ is compiler keyword. it is a pointer "qualifier" that tells
+    // the compiler "i promise this pointer is the only way to access the object
+    // it points to during its lifetime". in other words , you are guaranteeing
+    // no aliasing: no other pointer will access the same memory.
+
+    // with this guarantee , the compiler can enable aggressive optimizations:
+    // - vectorization (SIMD)
+    // - reordering operartions
+    // - keeping things in registers
+
+    // here is an example
+    auto add_arrays = [](int* __restrict__ A,
+                         int* __restrict__ B,
+                         int* __restrict__ C,
+                         size_t n) -> void {
+        for (int i = 0; i < n; ++i) {
+            C[i] = A[i] + B[i];
+        }
+    };
+
+    // let's make some arrays
+    int n = 100;
+    std::vector<int> arr_1(n);
+    std::vector<int> arr_2(n);
+    std::vector<int> arr_3(n);
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(1, 100);
+
+    std::generate(arr_1.begin(), arr_1.end(), [&]() { return dist(gen); });
+
+    // __restrict__ can appear in three different variants depending on the targetted
+    // compiler:
+    // 1. restrict
+    // 2. __restrict__
+    // 3. __restrict
+
+    // the above all do the same thing , but only work for certain compilers.
+    // restrict works for C99 standard , __restrict__ works for all GCC / Clang
+    // , and __restrict works for MVSC only.
+
+    // (1) restrict:
+    // the first one , restrict , is not a standard C keyword since C99. C99 is
+    // 1999 version of C , just like how C++17 means 2017 version of C. restrict
+    // may be part of C99 and beyond , but it is not part of any C++ standard.
+    // some C++ compilers may accept it , but it's bad practice to use in C++ as
+    // it may conflict with user code that uses restrict as a variable /
+    // function name. it is fine to use this for C code that follows C99 
+    // standard and beyond , but it is risky to use it with C++ code. MVSC in
+    // particular does not accept it. GCC for C++ standards might.
+
+    // (2) __restrict__:
+    // __restrict__ is a GCC / Clang compiler reserved identifier. the double
+    // underscores mean it's in the compiler's namespace. it is safe to use in
+    // C++ because it won't conflict with user code. it works for both C and C++
+    // code reliably for C and C++ standard compiled by GCC. it does not work
+    // for MVSC.
+
+    // (3) __restrict:
+    // the same as (2) but works for MVSC instead of GCC.
 
     return 0;
 }

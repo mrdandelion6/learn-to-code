@@ -58,6 +58,15 @@ int scalar_memory_operations();
 int branch_divergence_on_amd();
 int amd_atomic_operations();
 int wavefront_intrinsics();
+int amd_gemm_optimization_strategies(); 
+
+// AMD GPU INTRINSICS & BUILTINS
+int amd_intrinsics_overview();
+int lane_and_wavefront_intrinsics();
+int dpp_intrinsics();
+int ds_lds_intrinsics();
+int ballot_vote_intrinsics();
+int amd_vs_cuda_intrinsics_mapping();
 
 // ROCM ECOSYSTEM TOOLS
 int rocm_smi();
@@ -181,5 +190,46 @@ int hip_portability_initiatives();
 
 int main() {
     // RUN
+    return 0;
+}
+
+int amd_intrinsics_overview() {
+    // intrinsics are special low-level functions that map directly to specific
+    // hardware instructions on the GPU. they give you explicit control over
+    // hardware features without writing assembly code. you can think of them as
+    // a bridge between high level C++ and the actual machine instructions the
+    // GPU executes.
+
+    // WHY USE THEM ?
+    // when you write regular C++ code for GPUs , the compiler translates your
+    // code into machine instructions. sometimes you need more control over
+    // exactly what instructions get executed.. especially for:
+    // - performance critical operations
+    // - hardware-specific features (like specialized math units)
+    // - synchronization and memory ordering
+    // - bit manipulation and low-level data operations
+
+    // EXAMPLES
+    // a very common one is __sync_threads() which creates a sync barrier on a
+    // block.
+    return 0;
+}
+
+int lane_and_wavefront_intrinsics() {
+
+    // Y = __builtin_amdgcn_readfirstlane(X):
+    // the above intrinsic broadcasts the value of X from the first lane in a
+    // wavefront to Y in every single lane , effectively syncing Y on all lanes.
+
+    // this serves two purposes:
+    //
+    // 1. guarantees uniformity:
+    //      - tells the compiler "this value is definitely uniform across the
+    //        wavefront".
+    //
+    // 2. optimization hint:
+    //      - allows the value to be stored in a scalar register (SGPR) instead
+    //        of a vector register (VGPR). this saves register pressure.
+
     return 0;
 }
