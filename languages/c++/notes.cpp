@@ -92,6 +92,7 @@ int lvalues_rvalues();
 int aggregates();
 int deleted_functions();
 int lambda_functions();
+int variadic_arguments();
 int namespaces();
 int scope_resolution_operator();
 int function_overloading();
@@ -178,6 +179,7 @@ int volatile_keyword();
 
 // COMPILER EXTENSIONS
 int compiler_extensions_overview();
+int intrinsics();
 int builtins();
 int restrict_keyword();
 int attribute_keyword();
@@ -230,7 +232,7 @@ int fast_cpp_csv_parser();
 
 int main() {
     // RUN
-    preprocessor_directives();
+    macros();
     return 0;
 }
 
@@ -716,9 +718,73 @@ int preprocessor_directives() {
 }
 
 int macros() {
-    // macros are preprocessor directives that perform text substitution before
-    // actual compilation begins. you may remember them from C. you make a macro
-    // using the #define preprocessor directive.
+    // macros are defined using the #define preprocessor directive. they perform
+    // text substitution before actual compilation begins. you may remember them
+    // from C.
+
+    // you can have simple macros like COOL_MACRO_69 in preprocessor_directives.
+    // or you can have macros that take arguments when they expand:
+
+    #define COOL_SQ(a) ((a) * (a))
+
+    // we take in args like a function , but have no types. also , note the many
+    // parantheses in ((a) * (a)). this is for preventing operator precedence
+    // issues. for example , if we didn't have those parantheses:
+
+    #define BAD_SQ(a) (a * a)
+
+    std::cout << "COOL_SQ(2 + 3) = " << COOL_SQ(2 + 3) << std::endl;
+    // above prints 25 as wanted
+
+    std::cout << "BAD_SQ(2 + 3) = " << BAD_SQ(2 + 3) << std::endl;
+    // this prints 2 + 3 * 2 + 3 = 11 , wrong !
+
+    // this is because macros directly substitute the argument you pass in ,
+    // they aren't actual function calls that get some stack. so 2 + 3 is not
+    // evaluate before the macro code is substituted.
+    /**
+        BAD_SQ(2 + 3)
+
+        turns exactly to
+
+        (2 + 3 * 2 + 3)
+     */
+
+    // also note that something like COOL_SQ(x++) will not result in (a+1)^2
+    // but rather has undefined results..
+
+    int x = 6;
+    std::cout << "COOL_SQ(x++) = " << COOL_SQ(x++) << std::endl;
+    // might print 36 , 42 , or 49
+
+    // happens because the macro expands to:
+    /**
+        COOL_SQ(x++)
+
+        turns exactly to
+
+        (x++ * x++)
+     */
+    // and (x++ * x++) updates x by 1 twice , but we don't know what order in
+    // which things will happen. left to right evaluation is not guaranteed.
+
+    // expressions like (x++) * (x++) naturaly have race conditions. this is cus
+    // we are modifying x between sequence boints. the C++ standard doesn't
+    // define the order of evaluation.
+
+    // MULTILINE MACROS
+    // we may want to add in many lines of code at once for a macro. to do this
+    // , we use a do-while loop and back slashes \. for example , consider
+    // swapping the value of two variables like COOL_SWAP(a, b)
+
+    #define COOL_SWAP(a, b) do { \
+        int temp = a;            \
+        a = b;                   \
+        b = temp;                \
+    } while (0)
+
+    // the reason we have a do-while loop is because
+
     return 0;
 }
 
@@ -5172,7 +5238,8 @@ int compiler_extensions_overview() {
     // 4. fill gaps before standardization
 
     // TYPES OF COMPILER EXTENSIONS
-    // - builtins
+    // - intrinsics (hardware instructions mapping)
+    // - builtins (compiler provided functions / values)
     // - attributes
     // - extended keywords
     // - pragmas
@@ -5182,7 +5249,13 @@ int compiler_extensions_overview() {
     // different hardware has special capabilities that standard C++ doesn't
     // know about , but the compiler can determine. remember that the compiler
     // is what makes machine code for specific hardwares.. so it knows about the
-    // machine it is targetting. below is an example.
+    // machine it is targetting. we can make use of this through compiler
+    // extensions. such complier extensions--that map to hardware specific
+    // features--are known as intrinsics. more in this in the intrinsic()
+    // section below.
+
+    // here is an example of something we can replace with the popcount CPU
+    // intrinsic.
 
     int value = 9;
     int count = 0;
@@ -5212,13 +5285,19 @@ int compiler_extensions_overview() {
     }
     // here , doing __builtin_expect(error, 0) means , "hey CPU , the value of
     // error is most likely going to be 0". this helps with more accurate branch
-    // prediction.
-
+    // prediction. it means "we probably won't take this if statement branch".
 
     // (3) PLATFORM-SPECIFIC NEEDS
 
     // (4) FILL GAPS BEFORE STANDARDIZATION
 
+    return 0;
+}
+
+int intrinsics() {
+    // compiler extensions that map to hardware-specific features are known as
+    // intrinsics. so every intrinsic is a compiler extension , but not every
+    // compiler extension is an intrinsic.
     return 0;
 }
 
