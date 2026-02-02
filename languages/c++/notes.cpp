@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <popcntintrin.h>
 #include <random>
 #include <type_traits>
 #include <ios>
@@ -790,6 +791,34 @@ int macros() {
 
 int conditional_compilation_directives() {
     // TODO: add notes
+    return 0;
+}
+
+int pragma_directive() {
+    // #pragma is a preprocessor directive that provides a mechanism for
+    // compiler-specific extensions and instructions. it solves the problem of
+    // standardizing these compiler extensions.
+
+    // for example , if a compiler vendor wanted to add a special feature , they
+    // might:
+    // 1. add a new compiler extension like __packed or __align
+    //      - problem: breaks existing code that uses those words as variable
+    //        names
+    // 2. add a new preprocessor directive like #microsoft_optimize
+    //      - problem: other compilers will get errors from unknown directives
+
+    // pragma solves these problems by saying "here's a standard way to add
+    // compiler-specific driectives. if you don't recognize it , just ignore it"
+
+    // below are some examples.
+
+    #pragma pack(1)
+    // MVSC understands this , GCC might ignore or have an equivalent
+
+    #pragma omp parallel for
+    // openmp compilers understand this , others ignore
+
+    // pragma doesn't allow for intrinsics or builtins
     return 0;
 }
 
@@ -5294,13 +5323,6 @@ int compiler_extensions_overview() {
     return 0;
 }
 
-int intrinsics() {
-    // compiler extensions that map to hardware-specific features are known as
-    // intrinsics. so every intrinsic is a compiler extension , but not every
-    // compiler extension is an intrinsic.
-    return 0;
-}
-
 int builtins() {
     // buitins are a type of compiler extension. they mean literally "built
     // into the compiler"--not provided by an external library. builtins have
@@ -5313,6 +5335,23 @@ int builtins() {
     // literally grab return address from the call stack
     void* ret = __builtin_return_address(0);
 
+    return 0;
+}
+
+int intrinsics() {
+    // TODO: i think these notes aren't accurate..
+
+    // builtins that map to hardware-specific features are known as intrinsics.
+    // so every intrinsic is a builtin , but not every builtin is an intrinsic.
+    // intrinsics map directly to specific machine instructions. they're
+    // essentially inline assembly wrarppers with type safety.
+
+    // remember the popcount builtin ? well here's an instrinsic for it:
+    _mm_popcnt_u32(55);
+    // this is guanteed to map to hardware ! whereas __builtin_popcount MAY use
+    // hardware instructions if available , or fall back to a software
+    // implementation built into the compiler. this is a perfect example of how
+    // builtins are more flexible.
     return 0;
 }
 
