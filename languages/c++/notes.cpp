@@ -5249,6 +5249,39 @@ int templates() {
     return 0;
 }
 
+int inline_keyword() {
+    // inline is a keyword in the C++ standard that has two main purposes:
+    // 1. ODR relaxation:
+    //      the primary purpose of iniline is that it allows functions and
+    //      objects to be defined in many "translation units" (single source
+    //      file after preprocessing) without violating the one definition rule
+    //      (ODR).
+    //
+    //      for ex. in a header , you might have:
+    /**
+            inline int add(int a, int b) {
+                return a + b;
+            }
+    */
+    //      without inline , defining a function in a header included by
+    //      multiple source files would cause linker errors. adding inline
+    //      simply tells the linker to not cry about multiple definitons and
+    //      just pick and use any one of them.
+
+    // 2. inlining hint (historical)
+    //      originally , inline was a hint to the compiler to inline the
+    //      function: to replace the function call with the actual function body
+    //      like how macros work. however , compilers routinely ignore this
+    //      hint. moreover , compilers already inline functions without the
+    //      keyword when beneficial.
+
+    //  for forcing inlining more aggressively , you would want to use compiler
+    //  extensions such as __attribute__((always_inline)). you will learn about
+    //  compiler extensions below.
+
+    return 0;
+}
+
 int compiler_extensions_overview() {
     // compiler extensions are keywords that allow specific compilers to add
     // features which are beyond standard C++. different compilers have
