@@ -65,7 +65,6 @@ int array_types();
 int enum_types();
 int auto_type();
 int decltype_specifier();
-int typedef_using();
 int uint_types();
 int ptrdiff_t_type();
 int intptr_t_uintptr_t_types();
@@ -177,6 +176,8 @@ int constexpr_keyword();
 int explicit_keyword();
 int consteval_keyword();
 int volatile_keyword();
+int typedef_keyword();
+int using_keyword();
 
 // COMPILER EXTENSIONS
 int compiler_extensions_overview();
@@ -5453,3 +5454,73 @@ int restrict_keyword() {
 
     return 0;
 }
+
+int typedef_keyword() {
+    // a C / C++ keyword that gives an existing type another name. the new name is
+    // called a "type alias". we discussed this in notes.c
+    //
+    // syntax:
+    typedef int IntAlias;
+
+    IntAlias x = 56;
+
+    // particularly useful for shortening long types:
+    typedef unsigned long long LargeNum;
+    LargeNum population = 8000000000;
+
+    // in C , also useful for structs
+    struct Student
+    {
+        int age;
+        int grade;
+    };
+
+    // then in C you do:
+    struct Student boba = {4, 50};
+
+    // in C++ you can just do:
+    Student doba = {90, 100};
+
+    // you could use a typedef to not have to type `struct Student` in C:
+    typedef struct Student stoodent;
+    stoodent yoba = {2, 99};
+
+    // even better , you define the struct as follows:
+    typedef struct Teacher {
+        int age;
+        std::string name;
+    } Teacher;
+    // of course , this is only useful for C. just going over it here as a
+    // refresher for myself.
+
+    Teacher pooch = { 20, "nick" };
+
+    // typedef is actually old. for modern C++ , you should instead use the
+    // keyword: using. see the using_keyword() function.
+    return 0;
+}
+
+int using_keyword() { 
+    // modern replacement for the typedef keyword
+    // syntax:
+    using IntAlias = int;
+    IntAlias x = 69;
+
+    // it is better to use `using` instead of `typedef` because:
+    //
+    // 1. reads from left to right
+    // 2. clearer for compplicated cases:
+    typedef void (*FunctionPointer)(int);
+    // vs:
+    using FunctionPointer = void (*)(int);
+
+    // 3. supports template aliasing:
+    // template<typename T>
+    // class Cool {
+    //     using List = std::vector<T>;
+    // };
+
+
+    return 0;
+}
+
